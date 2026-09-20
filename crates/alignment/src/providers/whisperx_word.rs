@@ -10,15 +10,14 @@ use subtitles::{
 };
 
 use crate::{
-    error::AlignmentError, helpers::convert_py_cues_to_line_aligned_subtitle_document,
+    error::AlignmentError, helpers::convert_py_cues_to_word_aligned_subtitle_document,
     provider::LyricsAligner,
 };
 
-pub struct AeneasAligner;
+pub struct WhisperXWordAligner;
 
-impl LyricsAligner for AeneasAligner {
+impl LyricsAligner for WhisperXWordAligner {
     fn align_cues(
-        // &self,
         audio_file_path: PathBuf,
         subtitle_document: SubtitleDocument,
     ) -> Result<Option<SubtitleDocument>, AlignmentError> {
@@ -33,32 +32,36 @@ impl LyricsAligner for AeneasAligner {
             .first()
             .ok_or(AlignmentError::NoLanguageCode)?;
 
-        let py_aligned_cues = Self::align_cues(&subtitle_document, audio_path, language)?;
+        let device = "cuda"; // Store in Config crate
 
-        convert_py_cues_to_line_aligned_subtitle_document(py_aligned_cues, subtitle_document)
+        let py_aligned_cues = Self::align_cues(&subtitle_document, audio_path, language, device)?;
+
+        convert_py_cues_to_word_aligned_subtitle_document(py_aligned_cues, subtitle_document)
     }
 }
 
-impl AeneasAligner {
+impl WhisperXWordAligner {
     fn align_cues(
         subtitle_document: &SubtitleDocument,
         audio_path: String,
         language: &Language,
-        // device: &str,
+        device: &str,
     ) -> Result<Py<PyAny>, AlignmentError> {
         Python::attach(|py| -> Result<Py<PyAny>, AlignmentError> {
             let datetime = py.import("datetime")?;
             let timedelta = datetime.getattr("timedelta")?;
 
-            let provider_module = PyModule::import(py, "aligner.aeneas.provider")?;
-            let options_module = PyModule::import(py, "aligner.aeneas.options")?;
             let service_module = PyModule::import(py, "aligner.service")?;
             let language_module = PyModule::import(py, "aligner.models.language")?;
             let cue_module = PyModule::import(py, "aligner.models.cue")?;
+            let provider_module = PyModule::import(py, "aligner.whisperx_word.provider")?;
+            let options_module = PyModule::import(py, "aligner.whisperx_word.options")?;
 
-            let aeneas_aligner = provider_module.getattr("AeneasAligner")?.call1(())?;
+            let whisperx_aligner = provider_module
+                .getattr("WhisperXWordAligner")?
+                .call1((device,))?;
             let providers = PyDict::new(py);
-            providers.set_item("aeneas", aeneas_aligner)?;
+            providers.set_item("whisperx_word", whisperx_aligner)?;
 
             let alignment_service = service_module
                 .getattr("AlignmentService")?
@@ -72,7 +75,7 @@ impl AeneasAligner {
                 language.as_flores_200(),
             ))?;
             let options = options_module
-                .getattr("AeneasOptions")?
+                .getattr("WhisperXWordOptions")?
                 .call1((language_py,))?;
 
             let lrc_contents = PyList::empty(py);
@@ -99,8 +102,10 @@ impl AeneasAligner {
                 SubtitleCues::None => {}
             }
 
-            let result = alignment_service
-                .call_method1("align_cues", ("aeneas", lrc_contents, audio_path, options))?;
+            let result = alignment_service.call_method1(
+                "align_cues",
+                ("whisperx_word", lrc_contents, audio_path, options),
+            )?;
 
             Ok(result.unbind())
         })

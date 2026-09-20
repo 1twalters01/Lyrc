@@ -6,8 +6,7 @@
 * Add download providers
     [ ] Test Musixmatch
 
-* Add option for alignment level
-    [ ] Cue level alignment
+* Have defined requirements
 
 * Allow language switching on the fly
 
@@ -22,9 +21,9 @@
 - [ ] Can download lyrics of current track
     - [x] From LrcLib
     - [ ] From Musixmatch
-- [ ] Can force-align lyrics
+- [x] Can force-align lyrics
     - [x] Cue level to Word level alignment
-    - [ ] No alignment to Cue level alignment
+    - [x] No alignment to Cue level alignment ---> This is currently scuffed
 - [ ] Can Translate lyrics 
     - [x] Can use Argos translator to translate lyrics
     - [ ] Can switch the displayed lyrics language
@@ -62,6 +61,7 @@
     * MacOS?
     * Windows?
 * CLI Commands?
+* Improve cue level alignment
 * Refactor
 * Add Genius as a download option
 * Translate lyrics

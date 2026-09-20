@@ -11,7 +11,7 @@ use chrono::Duration;
 use std::{fs, path::PathBuf};
 use uuid::Uuid;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SyncLevel {
     Phoneme,
     Word,

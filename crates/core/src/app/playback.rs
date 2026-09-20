@@ -1,6 +1,6 @@
 use chrono::Duration;
 use mpris::playback::{PlaybackCommand, PlaybackStatus};
-use subtitles::subtitles::SubtitleCues;
+use subtitles::subtitles::{SubtitleCues, SyncLevel};
 
 use crate::{app::App, renderer::Renderer};
 
@@ -44,6 +44,10 @@ where
         }
 
         if let Some(ref document) = self.state.subtitle_document {
+            if document.sync_level() == SyncLevel::None {
+                return Ok(())
+            }
+
             let duration = match &document.cues {
                 SubtitleCues::Word(cues) => cues[cue_index].start,
                 SubtitleCues::Cue(cues) => cues[cue_index].start,

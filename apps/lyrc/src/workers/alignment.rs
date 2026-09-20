@@ -3,8 +3,9 @@ use std::thread;
 use alignment::{
     messages::{AlignmentRequest, AlignmentResult, AlignmentTask},
     provider::LyricsAligner,
-    providers::whisperx::WhisperXAligner,
+    providers::{whisperx_cue::WhisperXCueAligner, whisperx_word::WhisperXWordAligner},
 };
+use subtitles::subtitles::SyncLevel;
 use tokio::sync::mpsc;
 
 pub struct AlignmentWorker {
@@ -35,10 +36,21 @@ impl AlignmentWorker {
                         audio_file_path,
                         subtitle_document,
                     }) => {
-                        let whisperx_result =
-                            WhisperXAligner::align_cues(audio_file_path, subtitle_document);
+                        let alignment_result = match subtitle_document.sync_level() {
+                            SyncLevel::None => WhisperXCueAligner::align_cues(
+                                audio_file_path,
+                                subtitle_document
+                            ),
+                            SyncLevel::Cue => WhisperXWordAligner::align_cues(
+                                audio_file_path,
+                                subtitle_document
+                            ),
+                            SyncLevel::Word => return,
+                            SyncLevel::Phoneme => return,
+                        };
 
-                        let result = match whisperx_result {
+
+                        let result = match alignment_result {
                             Ok(subtitle_document) => AlignmentResult::Complete(subtitle_document),
                             Err(error) => AlignmentResult::Failed(error),
                         };

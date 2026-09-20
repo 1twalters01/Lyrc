@@ -10,13 +10,15 @@ use subtitles::{
 };
 
 use crate::{
-    error::AlignmentError, helpers::convert_py_cues_to_word_aligned_subtitle_document,
+    error::AlignmentError, helpers::{
+        convert_py_cues_to_line_aligned_subtitle_document,
+    },
     provider::LyricsAligner,
 };
 
-pub struct WhisperXAligner;
+pub struct WhisperXCueAligner;
 
-impl LyricsAligner for WhisperXAligner {
+impl LyricsAligner for WhisperXCueAligner {
     fn align_cues(
         audio_file_path: PathBuf,
         subtitle_document: SubtitleDocument,
@@ -36,11 +38,12 @@ impl LyricsAligner for WhisperXAligner {
 
         let py_aligned_cues = Self::align_cues(&subtitle_document, audio_path, language, device)?;
 
-        convert_py_cues_to_word_aligned_subtitle_document(py_aligned_cues, subtitle_document)
+
+        convert_py_cues_to_line_aligned_subtitle_document(py_aligned_cues, subtitle_document)
     }
 }
 
-impl WhisperXAligner {
+impl WhisperXCueAligner {
     fn align_cues(
         subtitle_document: &SubtitleDocument,
         audio_path: String,
@@ -54,14 +57,14 @@ impl WhisperXAligner {
             let service_module = PyModule::import(py, "aligner.service")?;
             let language_module = PyModule::import(py, "aligner.models.language")?;
             let cue_module = PyModule::import(py, "aligner.models.cue")?;
-            let provider_module = PyModule::import(py, "aligner.whisperx_word.provider")?;
-            let options_module = PyModule::import(py, "aligner.whisperx_word.options")?;
+            let provider_module = PyModule::import(py, "aligner.whisperx_cue.provider")?;
+            let options_module = PyModule::import(py, "aligner.whisperx_cue.options")?;
 
             let whisperx_aligner = provider_module
-                .getattr("WhisperXWordAligner")?
+                .getattr("WhisperXCueAligner")?
                 .call1((device,))?;
             let providers = PyDict::new(py);
-            providers.set_item("whisperx_word", whisperx_aligner)?;
+            providers.set_item("whisperx_cue", whisperx_aligner)?;
 
             let alignment_service = service_module
                 .getattr("AlignmentService")?
@@ -75,7 +78,7 @@ impl WhisperXAligner {
                 language.as_flores_200(),
             ))?;
             let options = options_module
-                .getattr("WhisperXWordOptions")?
+                .getattr("WhisperXCueOptions")?
                 .call1((language_py,))?;
 
             let lrc_contents = PyList::empty(py);
@@ -104,10 +107,11 @@ impl WhisperXAligner {
 
             let result = alignment_service.call_method1(
                 "align_cues",
-                ("whisperx_word", lrc_contents, audio_path, options),
+                ("whisperx_cue", lrc_contents, audio_path, options),
             )?;
 
             Ok(result.unbind())
         })
     }
 }
+
