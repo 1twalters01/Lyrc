@@ -3,9 +3,9 @@ import whisperx
 from aligner.models.cue import Cue
 from aligner.models.aligned_cue import AlignedCue, Word
 from aligner.abstractions.providers import AlignmentProvider
-from aligner.whisperx.options import WhisperXOptions
+from aligner.whisperx_word.options import WhisperXWordOptions
 
-class WhisperXAligner(AlignmentProvider[WhisperXOptions]):
+class WhisperXWordAligner(AlignmentProvider[WhisperXWordOptions]):
     def __init__(self, device: str):
         self.device = device
 
@@ -13,7 +13,7 @@ class WhisperXAligner(AlignmentProvider[WhisperXOptions]):
         self,
         content: list[Cue | str],
         audio_path: str,
-        options: WhisperXOptions
+        options: WhisperXWordOptions
     ) -> list[AlignedCue | Cue]:
         language_code = options.language.code_2
         device = self.device
