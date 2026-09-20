@@ -27,7 +27,7 @@ where
                     }
                 }
                 AppMode::Edit {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => {}
             },
@@ -74,7 +74,7 @@ where
                     SubtitleCues::None => return Ok(()),
                 },
                 AppMode::Edit {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => {}
             },

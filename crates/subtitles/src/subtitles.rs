@@ -1,7 +1,8 @@
 use crate::{
     formats::{
         elrc::{parser::ElrcParser, writer::ElrcWriter},
-        lrc::{parser::LrcParser, writer::LrcWriter}, txt::parser::TxtParser,
+        lrc::{parser::LrcParser, writer::LrcWriter},
+        txt::parser::TxtParser,
     },
     language::Language,
     parser::SubtitleParser,
@@ -172,9 +173,16 @@ impl SubtitleCues {
             _ => {}
         }
     }
-}
 
-impl SubtitleCues {
+    pub fn cue_len(&self, index: usize) -> usize {
+        match self {
+            Self::Word(words) => words[index].cue_len(),
+            Self::Cue(cues) => cues[index].content.len(),
+            Self::Line(lines) => lines[index].content.len(),
+            Self::None => 0,
+        }
+    }
+
     pub fn get_lines(&self) -> Option<Vec<String>> {
         match self {
             SubtitleCues::Word(aligned_cues) => Some(
@@ -226,6 +234,17 @@ pub struct AlignedCue {
     pub start: Duration,
     pub end: Duration,
     pub words: Vec<Word>,
+}
+
+impl AlignedCue {
+    pub fn cue_len(&self) -> usize {
+        self.words
+            .iter()
+            .map(|word| word.content.clone())
+            .collect::<Vec<String>>()
+            .join(" ")
+            .len()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

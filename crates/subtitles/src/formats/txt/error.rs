@@ -31,4 +31,3 @@ impl fmt::Display for TxtError {
 }
 
 impl Error for TxtError {}
-

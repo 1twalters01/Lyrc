@@ -10,13 +10,8 @@ use crate::{
 };
 
 enum TxtLine {
-    Metadata {
-        key: String,
-        value: String,
-    },
-    Line {
-        text: String,
-    },
+    Metadata { key: String, value: String },
+    Line { text: String },
     Empty,
 }
 
@@ -49,7 +44,9 @@ impl TxtParser {
     fn parse_line(line: &str) -> Result<TxtLine, TxtError> {
         match Self::get_line_type(line) {
             TxtLineType::Metadata => Self::parse_metadata(line),
-            TxtLineType::Line => Ok(TxtLine::Line { text: line.to_string() }),
+            TxtLineType::Line => Ok(TxtLine::Line {
+                text: line.to_string(),
+            }),
             TxtLineType::Empty => Ok(TxtLine::Empty),
         }
     }
@@ -113,12 +110,12 @@ impl TxtParser {
                     _ => {}
                 },
                 TxtLine::Line { text } => {
-                    subtitle_document.cues.extend(SubtitleCues::Line(Vec::from([
-                        Line {
+                    subtitle_document
+                        .cues
+                        .extend(SubtitleCues::Line(Vec::from([Line {
                             id: Uuid::new_v4(),
                             content: text,
-                        },
-                    ])));
+                        }])));
                 }
                 TxtLine::Empty => {}
             }

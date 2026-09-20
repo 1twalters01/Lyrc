@@ -16,9 +16,9 @@ pub fn draw_footer<A: Debug>(
             selected_cues: _,
         } => Some(cue_index),
         AppMode::Edit {
-            cue_index,
+            cursor,
             selected_cues: _,
-        } => Some(cue_index),
+        } => Some(cursor.cue_index),
     };
 
     let automatic_scroll_offset = state.automatic_scroll_offset;

@@ -34,9 +34,7 @@ impl LyricsDownloader for LrclibProvider {
                 providers.set_item("lrclib", lrclib_downloader)?;
 
                 // Create options
-                let options = options_module
-                    .getattr("LrcLibOptions")?
-                    .call0()?;
+                let options = options_module.getattr("LrcLibOptions")?.call0()?;
 
                 // Create instance of lyrics service
                 let lyrics_service = service_module
@@ -57,7 +55,8 @@ impl LyricsDownloader for LrclibProvider {
                     timedelta,
                 ))?;
 
-                let coroutine = lyrics_service.call_method1("search", (py_track, "lrclib", options))?;
+                let coroutine =
+                    lyrics_service.call_method1("search", (py_track, "lrclib", options))?;
                 into_future(coroutine)
             })
             .map_err(|e| LyricsError::PythonError { error: e })?;

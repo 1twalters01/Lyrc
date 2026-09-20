@@ -48,30 +48,44 @@ where
                     SubtitleCues::None => {}
                 },
                 AppMode::Edit {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &mut subtitle_document.cues {
                     SubtitleCues::Word(cues) => {
                         for cue in selected_cues.iter().rev() {
                             cues.remove(cue.index);
-                            if cue.index < *cue_index {
-                                *cue_index = cue_index.saturating_sub(1);
+                            if cue.index < cursor.cue_index {
+                                let line_length = cues[cursor.cue_index.saturating_sub(1)]
+                                    .words
+                                    .iter()
+                                    .map(|word| word.content.clone())
+                                    .collect::<Vec<String>>()
+                                    .join(" ")
+                                    .len();
+                                cursor.move_up(line_length);
+                                // *cue_index = cue_index.saturating_sub(1);
                             }
                         }
                     }
                     SubtitleCues::Cue(cues) => {
                         for cue in selected_cues.iter().rev() {
                             cues.remove(cue.index);
-                            if cue.index < *cue_index {
-                                *cue_index = cue_index.saturating_sub(1);
+                            if cue.index < cursor.cue_index {
+                                let line_length =
+                                    cues[cursor.cue_index.saturating_sub(1)].content.len();
+                                cursor.move_up(line_length)
+                                // *cue_index = cue_index.saturating_sub(1);
                             }
                         }
                     }
                     SubtitleCues::Line(cues) => {
                         for cue in selected_cues.iter().rev() {
                             cues.remove(cue.index);
-                            if cue.index < *cue_index {
-                                *cue_index = cue_index.saturating_sub(1);
+                            if cue.index < cursor.cue_index {
+                                let line_length =
+                                    cues[cursor.cue_index.saturating_sub(1)].content.len();
+                                cursor.move_up(line_length)
+                                // *cue_index = cue_index.saturating_sub(1);
                             }
                         }
                     }
@@ -109,20 +123,21 @@ where
                     SubtitleCues::None => {}
                 },
                 AppMode::Edit {
-                    cue_index,
+                    cursor,
+                    // cue_index,
                     selected_cues,
                 } => match &mut subtitle_document.cues {
                     SubtitleCues::Word(cues) => {
-                        selected_cues.retain(|cue| cue.index != *cue_index);
-                        cues.remove(*cue_index);
+                        selected_cues.retain(|cue| cue.index != cursor.cue_index);
+                        cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Cue(cues) => {
-                        selected_cues.retain(|cue| cue.index != *cue_index);
-                        cues.remove(*cue_index);
+                        selected_cues.retain(|cue| cue.index != cursor.cue_index);
+                        cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Line(cues) => {
-                        selected_cues.retain(|cue| cue.index != *cue_index);
-                        cues.remove(*cue_index);
+                        selected_cues.retain(|cue| cue.index != cursor.cue_index);
+                        cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::None => {}
                 },
@@ -157,7 +172,7 @@ where
                                 }
                             }
                             AppMode::Edit {
-                                cue_index: _,
+                                cursor: _,
                                 selected_cues,
                             } => {
                                 for selected_cue in selected_cues {
@@ -187,7 +202,7 @@ where
                                 }
                             }
                             AppMode::Edit {
-                                cue_index: _,
+                                cursor: _,
                                 selected_cues,
                             } => {
                                 for selected_cue in selected_cues {
@@ -217,7 +232,7 @@ where
                                 }
                             }
                             AppMode::Edit {
-                                cue_index: _,
+                                cursor: _,
                                 selected_cues,
                             } => {
                                 for selected_cue in selected_cues {

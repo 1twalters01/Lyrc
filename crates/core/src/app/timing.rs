@@ -1,7 +1,12 @@
 use chrono::Duration;
 use subtitles::subtitles::SubtitleCues;
 
-use crate::{app::App, history::CueTimeChange, mode::AppMode, renderer::Renderer};
+use crate::{
+    app::App,
+    history::CueTimeChange,
+    mode::{AppMode, Cursor},
+    renderer::Renderer,
+};
 
 impl<R> App<R>
 where
@@ -173,12 +178,12 @@ where
                         }
                     }
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {
-                        let old_cue_index = cue_index.clone();
+                        let old_cue_index = cursor.cue_index.clone();
                         let new_cue_index =
-                            update_cue_index(document, cue_index, new_position, track);
+                            update_cue_index(document, &mut cursor.cue_index, new_position, track);
 
                         for selected_cue in &mut *selected_cues {
                             if selected_cue.index == old_cue_index {
@@ -190,8 +195,11 @@ where
                             }
                         }
 
+                        let line_length = document.cues.cue_len(new_cue_index);
+                        let new_cursor = Cursor::new(new_cue_index, line_length);
+
                         AppMode::Edit {
-                            cue_index: new_cue_index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
@@ -259,12 +267,19 @@ where
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
-                    } => AppMode::Edit {
-                        cue_index: update_cue_index(document, cue_index, new_position, track),
-                        selected_cues: selected_cues.clone(),
-                    },
+                    } => {
+                        let new_cue_index =
+                            update_cue_index(document, &mut cursor.cue_index, new_position, track);
+                        let line_length = document.cues.cue_len(new_cue_index);
+                        let new_cursor = Cursor::new(new_cue_index, line_length);
+
+                        AppMode::Edit {
+                            cursor: new_cursor,
+                            selected_cues: selected_cues.clone(),
+                        }
+                    }
                 };
                 Ok(())
             }
@@ -370,12 +385,16 @@ where
                         }
                     }
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {
-                        let old_cue_index = cue_index.clone();
-                        let new_cue_index =
-                            increase_cue_index(document, cue_index, forwards_cue_increment, track);
+                        let old_cue_index = cursor.cue_index.clone();
+                        let new_cue_index = increase_cue_index(
+                            document,
+                            &mut cursor.cue_index,
+                            forwards_cue_increment,
+                            track,
+                        );
 
                         for selected_cue in &mut *selected_cues {
                             if selected_cue.index == old_cue_index {
@@ -387,8 +406,11 @@ where
                             }
                         }
 
+                        let line_length = document.cues.cue_len(new_cue_index);
+                        let new_cursor = Cursor::new(new_cue_index, line_length);
+
                         AppMode::Edit {
-                            cue_index: new_cue_index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
@@ -454,17 +476,22 @@ where
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
-                    } => AppMode::Edit {
-                        cue_index: increase_cue_index(
+                    } => {
+                        let new_cue_index = increase_cue_index(
                             document,
-                            cue_index,
+                            &mut cursor.cue_index,
                             forwards_cue_increment,
                             track,
-                        ),
-                        selected_cues: selected_cues.clone(),
-                    },
+                        );
+                        let line_length = document.cues.cue_len(new_cue_index);
+                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        AppMode::Edit {
+                            cursor: new_cursor,
+                            selected_cues: selected_cues.clone(),
+                        }
+                    }
                 };
 
                 Ok(())
@@ -536,12 +563,21 @@ where
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
-                    } => AppMode::Edit {
-                        cue_index: decrease_cue_index(document, cue_index, backwards_cue_increment),
-                        selected_cues: selected_cues.clone(),
-                    },
+                    } => {
+                        let new_cue_index = decrease_cue_index(
+                            document,
+                            &mut cursor.cue_index,
+                            backwards_cue_increment,
+                        );
+                        let line_length = document.cues.cue_len(new_cue_index);
+                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        AppMode::Edit {
+                            cursor: new_cursor,
+                            selected_cues: selected_cues.clone(),
+                        }
+                    }
                 };
 
                 Ok(())
@@ -605,12 +641,21 @@ where
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
-                    } => AppMode::Edit {
-                        cue_index: decrease_cue_index(document, cue_index, backwards_cue_increment),
-                        selected_cues: selected_cues.clone(),
-                    },
+                    } => {
+                        let new_cue_index = decrease_cue_index(
+                            document,
+                            &mut cursor.cue_index,
+                            backwards_cue_increment,
+                        );
+                        let line_length = document.cues.cue_len(new_cue_index);
+                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        AppMode::Edit {
+                            cursor: new_cursor,
+                            selected_cues: selected_cues.clone(),
+                        }
+                    }
                 };
 
                 Ok(())
@@ -792,7 +837,7 @@ where
                         selected_cues,
                     } => {}
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                 }
@@ -818,7 +863,7 @@ where
                         selected_cues,
                     } => {}
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                 }
@@ -844,7 +889,7 @@ where
                         selected_cues,
                     } => {}
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                 }
@@ -870,7 +915,7 @@ where
                         selected_cues,
                     } => {}
                     AppMode::Edit {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                 }

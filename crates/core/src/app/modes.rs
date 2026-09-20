@@ -1,8 +1,9 @@
 use subtitles::subtitles::SubtitleCues;
+use synchronizer::strategies::words;
 
 use crate::{
     app::App,
-    mode::{AppMode, EditCue},
+    mode::{AppMode, Cursor, EditCue},
     renderer::Renderer,
 };
 
@@ -36,10 +37,10 @@ where
                 selected_cues,
             } => (*cue_index, selected_cues.clone()),
             AppMode::Edit {
-                cue_index,
+                cursor,
                 selected_cues,
             } => (
-                *cue_index,
+                cursor.cue_index,
                 selected_cues
                     .iter()
                     .map(|edit_cue| edit_cue.index)
@@ -61,7 +62,7 @@ where
             None => return Err(String::from("No subtitle document found")),
         };
 
-        let (cue_index, selected_cues) = match &self.state.app_mode {
+        let (cursor, selected_cues) = match &self.state.app_mode {
             AppMode::Normal => {
                 let index = *self
                     .synchronizer
@@ -87,7 +88,9 @@ where
                     index,
                     original_content,
                 }]);
-                (index, selected_edit_cues.clone())
+                let line_length = &subtitle_document.cues.cue_len(index);
+                let cursor = Cursor::new(index, *line_length);
+                (cursor, selected_edit_cues.clone())
             }
             AppMode::Select {
                 cue_index,
@@ -111,17 +114,19 @@ where
                         },
                     })
                     .collect::<Vec<EditCue>>();
-                (*cue_index, selected_edit_cues.clone())
+                let line_length = &subtitle_document.cues.cue_len(*cue_index);
+                let cursor = Cursor::new(*cue_index, *line_length);
+                (cursor, selected_edit_cues.clone())
             }
 
             AppMode::Edit {
-                cue_index,
+                cursor,
                 selected_cues,
-            } => (*cue_index, selected_cues.clone()),
+            } => (cursor.clone(), selected_cues.clone()),
         };
 
         self.state.app_mode = AppMode::Edit {
-            cue_index,
+            cursor,
             selected_cues,
         };
 

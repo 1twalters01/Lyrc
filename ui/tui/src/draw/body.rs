@@ -89,10 +89,10 @@ pub fn draw_body(
             selected_cues,
         } => (Some(*cue_index), selected_cues.clone()),
         AppMode::Edit {
-            cue_index,
+            cursor,
             selected_cues,
         } => (
-            Some(*cue_index),
+            Some(cursor.cue_index),
             selected_cues.iter().map(|c| c.index).collect(),
         ),
     };

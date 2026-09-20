@@ -106,7 +106,7 @@ pub async fn handle_key<R: Renderer>(
                         })
                         .collect(),
                     AppMode::Edit {
-                        cue_index: _,
+                        cursor: _,
                         selected_cues,
                     } => selected_cues
                         .iter()
@@ -136,7 +136,7 @@ pub async fn handle_key<R: Renderer>(
                         })
                         .collect(),
                     AppMode::Edit {
-                        cue_index: _,
+                        cursor: _,
                         selected_cues,
                     } => selected_cues
                         .iter()
@@ -166,7 +166,7 @@ pub async fn handle_key<R: Renderer>(
                         })
                         .collect(),
                     AppMode::Edit {
-                        cue_index: _,
+                        cursor: _,
                         selected_cues,
                     } => selected_cues
                         .iter()

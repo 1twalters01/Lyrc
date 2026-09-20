@@ -91,8 +91,8 @@ impl AppState {
                     track.get_lrc_file_path(),
                     track.get_txt_file_path(),
                 ]
-                    .into_iter()
-                    .flatten()
+                .into_iter()
+                .flatten()
                 {
                     if path.exists() {
                         if let Ok(value) = SubtitleDocument::from_pathbuf(path) {
@@ -126,7 +126,7 @@ impl AppState {
     pub fn is_edit_mode(&self) -> bool {
         match self.app_mode {
             AppMode::Edit {
-                cue_index: _,
+                cursor: _,
                 selected_cues: _,
             } => true,
             _ => false,

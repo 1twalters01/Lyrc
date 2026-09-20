@@ -10,9 +10,7 @@ use subtitles::{
 };
 
 use crate::{
-    error::AlignmentError, helpers::{
-        convert_py_cues_to_line_aligned_subtitle_document,
-    },
+    error::AlignmentError, helpers::convert_py_cues_to_line_aligned_subtitle_document,
     provider::LyricsAligner,
 };
 
@@ -37,7 +35,6 @@ impl LyricsAligner for WhisperXCueAligner {
         let device = "cuda"; // Store in Config crate
 
         let py_aligned_cues = Self::align_cues(&subtitle_document, audio_path, language, device)?;
-
 
         convert_py_cues_to_line_aligned_subtitle_document(py_aligned_cues, subtitle_document)
     }
@@ -114,4 +111,3 @@ impl WhisperXCueAligner {
         })
     }
 }
-

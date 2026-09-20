@@ -29,21 +29,25 @@ impl LyricsDownloader for MusixmatchProvider {
                 // import modules
                 let service_module = PyModule::import(py, "downloader.service")?;
                 let track_module = PyModule::import(py, "downloader.models.track")?;
-                let provider_module = PyModule::import(py, "downloader.providers.musixmatch.provider")?;
-                let options_module = PyModule::import(py, "downloader.providers.musixmatch.options")?;
+                let provider_module =
+                    PyModule::import(py, "downloader.providers.musixmatch.provider")?;
+                let options_module =
+                    PyModule::import(py, "downloader.providers.musixmatch.options")?;
 
                 // get provider dict with lrclib instance inside
                 let client = httpx.getattr("AsyncClient")?.call0()?;
                 let musixmatch_downloader = provider_module
                     .getattr("MusixmatchDownloader")?
-                    .call1((client, api_key,))?;
+                    .call1((client, api_key))?;
                 let providers = PyDict::new(py);
                 providers.set_item("musixmatch", musixmatch_downloader)?;
 
                 // Create options
-                let options = options_module
-                    .getattr("MusixmatchOptions")?
-                    .call1((duration_tolerance, page_size, page,))?;
+                let options = options_module.getattr("MusixmatchOptions")?.call1((
+                    duration_tolerance,
+                    page_size,
+                    page,
+                ))?;
 
                 // Create instance of lyrics service
                 let lyrics_service = service_module
@@ -64,9 +68,9 @@ impl LyricsDownloader for MusixmatchProvider {
                     timedelta,
                 ))?;
 
-                let coroutine = lyrics_service.call_method1("search", (py_track, "musixmatch", options))?;
+                let coroutine =
+                    lyrics_service.call_method1("search", (py_track, "musixmatch", options))?;
                 into_future(coroutine)
-
             })
             .map_err(|e| LyricsError::PythonError { error: e })?;
 

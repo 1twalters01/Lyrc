@@ -45,7 +45,7 @@ where
 
         if let Some(ref document) = self.state.subtitle_document {
             if document.sync_level() == SyncLevel::None {
-                return Ok(())
+                return Ok(());
             }
 
             let duration = match &document.cues {

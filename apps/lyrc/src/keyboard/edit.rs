@@ -3,7 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lyrc_core::{
     app::App,
     history::{CueContentChange, Edit},
-    mode::{AppMode, EditCue},
+    mode::{AppMode, Cursor, EditCue},
     renderer::Renderer,
 };
 use subtitles::subtitles::{SubtitleCues, SubtitleDocument};
@@ -11,7 +11,7 @@ use subtitles::subtitles::{SubtitleCues, SubtitleDocument};
 pub fn handle_key<R: Renderer>(
     app: &mut App<R>,
     key: KeyEvent,
-    cue_index: usize,
+    cursor: Cursor,
     selected_cues: Vec<EditCue>,
     _config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -48,7 +48,7 @@ pub fn handle_key<R: Renderer>(
                                 .collect();
 
                             app.state.app_mode = AppMode::Edit {
-                                cue_index,
+                                cursor,
                                 selected_cues,
                             };
                             Some(subtitle_document)
@@ -79,7 +79,7 @@ pub fn handle_key<R: Renderer>(
                                 .collect();
 
                             app.state.app_mode = AppMode::Edit {
-                                cue_index,
+                                cursor,
                                 selected_cues,
                             };
                             Some(subtitle_document)
@@ -172,7 +172,7 @@ pub fn handle_key<R: Renderer>(
 
         KeyCode::Char(char) => match &mut document.cues {
             SubtitleCues::Word(cues) => {
-                let current_cue = &mut cues[cue_index];
+                let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
 
                 app.state.unsaved_changes = true;
@@ -182,7 +182,7 @@ pub fn handle_key<R: Renderer>(
 
                 let edit = Edit::EditCueContent {
                     changes: Vec::from([CueContentChange {
-                        index: cue_index,
+                        index: cursor.cue_index,
                         old_content,
                         new_content,
                     }]),
@@ -190,7 +190,7 @@ pub fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let current_cue = &mut cues[cue_index];
+                let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 
                 app.state.unsaved_changes = true;
@@ -200,7 +200,7 @@ pub fn handle_key<R: Renderer>(
 
                 let edit = Edit::EditCueContent {
                     changes: Vec::from([CueContentChange {
-                        index: cue_index,
+                        index: cursor.cue_index,
                         old_content,
                         new_content,
                     }]),
@@ -208,7 +208,7 @@ pub fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Line(cues) => {
-                let current_cue = &mut cues[cue_index];
+                let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
 
                 app.state.unsaved_changes = true;
@@ -218,7 +218,7 @@ pub fn handle_key<R: Renderer>(
 
                 let edit = Edit::EditCueContent {
                     changes: Vec::from([CueContentChange {
-                        index: cue_index,
+                        index: cursor.cue_index,
                         old_content,
                         new_content,
                     }]),
@@ -229,7 +229,7 @@ pub fn handle_key<R: Renderer>(
         },
         KeyCode::Backspace => match &mut document.cues {
             SubtitleCues::Word(cues) => {
-                let current_cue = &mut cues[cue_index];
+                let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
 
                 app.state.unsaved_changes = true;
@@ -239,7 +239,7 @@ pub fn handle_key<R: Renderer>(
 
                 let edit = Edit::EditCueContent {
                     changes: Vec::from([CueContentChange {
-                        index: cue_index,
+                        index: cursor.cue_index,
                         old_content,
                         new_content,
                     }]),
@@ -247,7 +247,7 @@ pub fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let current_cue = &mut cues[cue_index];
+                let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 
                 app.state.unsaved_changes = true;
@@ -257,7 +257,7 @@ pub fn handle_key<R: Renderer>(
 
                 let edit = Edit::EditCueContent {
                     changes: Vec::from([CueContentChange {
-                        index: cue_index,
+                        index: cursor.cue_index,
                         old_content,
                         new_content,
                     }]),
@@ -265,7 +265,7 @@ pub fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Line(cues) => {
-                let current_cue = &mut cues[cue_index];
+                let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
 
                 app.state.unsaved_changes = true;
@@ -275,7 +275,7 @@ pub fn handle_key<R: Renderer>(
 
                 let edit = Edit::EditCueContent {
                     changes: Vec::from([CueContentChange {
-                        index: cue_index,
+                        index: cursor.cue_index,
                         old_content,
                         new_content,
                     }]),
