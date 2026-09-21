@@ -170,6 +170,31 @@ pub fn handle_key<R: Renderer>(
         KeyCode::Tab => app.switch_to_normal_mode(),
         KeyCode::Enter => app.switch_to_select_mode()?,
 
+        KeyCode::Left => match &mut app.state.app_mode {
+            AppMode::Edit { cursor, selected_cues: _ } => cursor.move_left(),
+            _ => {},
+        },
+        KeyCode::Right => match &mut app.state.app_mode {
+            AppMode::Edit { cursor, selected_cues: _ } => cursor.move_right(document.cues.cue_len(cursor.cue_index)),
+            _ => {},
+        },
+        KeyCode::Up => match &mut app.state.app_mode {
+            AppMode::Edit { cursor, selected_cues: _ } => cursor.move_up(document.cues.cue_len(cursor.cue_index.saturating_sub(1))),
+            _ => {},
+        }
+        KeyCode::Down => match &mut app.state.app_mode {
+            AppMode::Edit { cursor, selected_cues: _ } => {
+                let line_count = document.cues.len();
+                let new_line_index = std::cmp::min(
+                    cursor.cue_index.saturating_add(1),
+                    document.cues.len().saturating_sub(1),
+                );
+                let new_line_length = document.cues.cue_len(new_line_index);
+                cursor.move_down(new_line_length, line_count)
+            },
+            _ => {},
+        }
+
         KeyCode::Char(char) => match &mut document.cues {
             SubtitleCues::Word(cues) => {
                 let current_cue = &mut cues[cursor.cue_index];

@@ -174,6 +174,15 @@ impl SubtitleCues {
         }
     }
 
+    pub fn len(&self) -> usize {
+        match self {
+            Self::Word(words) => words.len(),
+            Self::Cue(cues) => cues.len(),
+            Self::Line(lines) => lines.len(),
+            Self::None => 0,
+        }
+    }
+
     pub fn cue_len(&self, index: usize) -> usize {
         match self {
             Self::Word(words) => words[index].cue_len(),

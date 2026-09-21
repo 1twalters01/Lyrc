@@ -9,25 +9,23 @@ pub fn draw_footer<A: Debug>(
     state: &mut AppState,
     active_cues: &[A],
 ) {
-    let selected_cue = match state.app_mode {
-        AppMode::Normal => None,
-        AppMode::Select {
-            cue_index,
-            selected_cues: _,
-        } => Some(cue_index),
-        AppMode::Edit {
-            cursor,
-            selected_cues: _,
-        } => Some(cursor.cue_index),
-    };
-
     let automatic_scroll_offset = state.automatic_scroll_offset;
     let mode = state.app_mode.to_string();
 
-    let text = format!(
-        "\nselected line: {:?}\nautomatic scroll: {:?}\nactive cues: {:?}\nmode: {:?}",
-        selected_cue, automatic_scroll_offset, active_cues, mode,
-    );
+    let text = match state.app_mode {
+        AppMode::Normal => format!(
+            "automatic scroll: {:?}, active cues: {:?}\nmode: {:?}",
+            automatic_scroll_offset, active_cues, mode,
+        ),
+        AppMode::Select { cue_index, selected_cues: _ } => format!(
+            "selected line: {:?}, automatic scroll: {:?}\nactive cues: {:?} mode: {:?}",
+            cue_index, automatic_scroll_offset, active_cues, mode,
+        ),
+        AppMode::Edit { cursor, selected_cues: _ } => format!(
+            "cursor: {:?},\nautomatic scroll: {:?}\nactive cues: {:?} mode: {:?}",
+            cursor, automatic_scroll_offset, active_cues, mode,
+        ),
+    };
 
     frame.render_widget(Paragraph::new(text), area);
 }
