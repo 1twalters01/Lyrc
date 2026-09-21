@@ -17,11 +17,17 @@ pub fn draw_footer<A: Debug>(
             "automatic scroll: {:?}, active cues: {:?}\nmode: {:?}",
             automatic_scroll_offset, active_cues, mode,
         ),
-        AppMode::Select { cue_index, selected_cues: _ } => format!(
+        AppMode::Select {
+            cue_index,
+            selected_cues: _,
+        } => format!(
             "selected line: {:?}, automatic scroll: {:?}\nactive cues: {:?} mode: {:?}",
             cue_index, automatic_scroll_offset, active_cues, mode,
         ),
-        AppMode::Edit { cursor, selected_cues: _ } => format!(
+        AppMode::Edit {
+            cursor,
+            selected_cues: _,
+        } => format!(
             "cursor: {:?},\nautomatic scroll: {:?}\nactive cues: {:?} mode: {:?}",
             cursor, automatic_scroll_offset, active_cues, mode,
         ),

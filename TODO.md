@@ -3,6 +3,8 @@
 * Have a proper config module
     [ ] Read from toml/json file 
 
+* Handle event for change in playback speed
+
 * Add download providers
     [ ] Test Musixmatch
 
