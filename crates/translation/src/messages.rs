@@ -15,7 +15,7 @@ pub struct TranslationTask {
 // Change error to not be string
 #[derive(Debug)]
 pub enum TranslationResult {
-    Complete(Option<SubtitleDocument>),
+    Complete(Option<(SubtitleDocument, Language)>),
     Cancelled,
     Failed(TranslationError),
 }

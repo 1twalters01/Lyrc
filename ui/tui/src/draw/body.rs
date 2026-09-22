@@ -18,10 +18,9 @@ pub fn draw_body(
     let visible_height = area.height as usize;
     let middle = visible_height / 2;
 
-    let subtitle_document = state.subtitle_document.as_ref();
-
-    let mut lines: Vec<Line> = subtitle_document
-        .map(|document| match &document.cues {
+    let subtitle_document_state = state.subtitle_documents.active();
+    let mut lines: Vec<Line> = subtitle_document_state
+        .map(|document_state| match &document_state.document.cues {
             SubtitleCues::Word(cues) => cues
                 .iter()
                 .map(|cue| {

@@ -10,33 +10,60 @@ impl<R> App<R>
 where
     R: Renderer,
 {
-    pub fn push_to_history(&mut self, edit: Edit) {
-        self.state.edit_history.push(edit);
+    pub fn push_to_history(&mut self, edit: Edit) -> bool {
+        if let Some(document_state) = self.state.subtitle_documents.active_mut() {
+            document_state.edit_history.push(edit);
+            return true
+        }
+
+        false
     }
 
     pub fn undo(&mut self) {
-        if let Some(edit) = self.state.edit_history.pop_undo() {
-            self.undo_edit(&edit);
-            self.state.edit_history.push_redo(edit);
-        }
+        let Some(edit) = ({
+            let Some(document_state) = self.state.subtitle_documents.active_mut() else {
+                return;
+            };
 
-        if self.state.edit_history.is_empty() {
-            self.state.unsaved_changes = false;
+            document_state.edit_history.pop_undo()
+        }) else {
+            return;
+        };
+
+        self.undo_edit(&edit);
+
+        if let Some(document_state) = self.state.subtitle_documents.active_mut() {
+            document_state.edit_history.push_redo(edit);
+
+            if document_state.edit_history.is_empty() {
+                document_state.unsaved_changes = false;
+            }
         }
     }
 
     pub fn redo(&mut self) {
-        if let Some(edit) = self.state.edit_history.pop_redo() {
-            self.state.unsaved_changes = true;
-            self.redo_edit(&edit);
-            self.state.edit_history.push_undo(edit);
+        let Some(edit) = ({
+            let Some(document_state) = self.state.subtitle_documents.active_mut() else {
+                return;
+            };
+
+            document_state.edit_history.pop_redo()
+        }) else {
+            return;
+        };
+
+        self.redo_edit(&edit);
+
+        if let Some(document_state) = self.state.subtitle_documents.active_mut() {
+            document_state.unsaved_changes = true;
+            document_state.edit_history.push_undo(edit);
         }
     }
 
     fn undo_edit(&mut self, edit: &Edit) {
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match edit {
-                Edit::EditCueContent { changes } => match &mut subtitle_document.cues {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match edit {
+                Edit::EditCueContent { changes } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(subtitle_cues) => {
                         for change in changes {
                             if let SubtitleCues::Word(cues) = &change.old_content {
@@ -87,9 +114,9 @@ where
     }
 
     fn redo_edit(&mut self, edit: &Edit) {
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match edit {
-                Edit::EditCueContent { changes } => match &mut subtitle_document.cues {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match edit {
+                Edit::EditCueContent { changes } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(subtitle_cues) => {
                         for change in changes {
                             if let SubtitleCues::Word(cues) = &change.old_content {

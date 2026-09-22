@@ -1,5 +1,5 @@
 use chrono::Duration;
-use subtitles::subtitles::SubtitleCues;
+use subtitles::subtitles::{SubtitleCues, SubtitleDocument};
 use synchronizer::{
     strategies::{
         cues::{CueIndex, CueSyncEvent, CueSynchronizer},
@@ -7,6 +7,8 @@ use synchronizer::{
     },
     traits::{CueIndexed, Synchronizer},
 };
+
+use crate::state::SubtitleDocumentState;
 
 #[derive(Clone, Debug)]
 pub enum SyncEvent {
@@ -80,9 +82,12 @@ impl AppSynchronizer {
 
     pub fn update(
         &mut self,
-        subtitle_document: &Option<subtitles::subtitles::SubtitleDocument>,
+        subtitle_document_state: &Option<&SubtitleDocumentState>,
         position: &Option<Duration>,
     ) -> Option<SyncEvent> {
+        let subtitle_document: &Option<SubtitleDocument> =
+            &subtitle_document_state.map(|state| state.document.clone());
+
         if let Some(document) = subtitle_document {
             match document.cues {
                 SubtitleCues::Word(_) => self.mode = SynchronizerMode::Word,

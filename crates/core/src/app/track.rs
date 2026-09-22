@@ -11,6 +11,6 @@ where
     }
 
     pub async fn update_subtitle_document(&mut self) {
-        self.state.update_subtitle_document().await;
+        self.state.reload_subtitle_documents().await;
     }
 }

@@ -3,13 +3,13 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lyrc_core::{
     app::App,
     history::{CueTimeChange, Edit},
-    renderer::Renderer,
+    renderer::Renderer, state::{SubtitleDocumentState, SubtitleVariant},
 };
 use lyrics::{models::LyricsFormat, service::LyricsService};
 use subtitles::{
     formats::lrc::parser::LrcParser,
     parser::SubtitleParser,
-    subtitles::{SubtitleCues, SubtitleDocument},
+    subtitles::SubtitleCues,
 };
 
 pub async fn handle_key<R: Renderer>(
@@ -20,19 +20,15 @@ pub async fn handle_key<R: Renderer>(
     match key.code {
         // Quit
         KeyCode::Esc => {
-            if app.state.unsaved_changes {
-                app.state.unsaved_changes = false;
-                app.state.subtitle_document = match app.state.track {
-                    Some(ref track) => match &track.file_path {
-                        Some(file_path) => {
-                            let mut lyrics_path = file_path.to_path_buf();
-                            lyrics_path.set_extension("lrc");
-                            SubtitleDocument::from_pathbuf(lyrics_path).ok()
-                        }
-                        None => None,
-                    },
-                    None => None,
-                };
+            let document_state = app.state.subtitle_documents.active_mut();
+            if let Some(document_state) = document_state {
+                if document_state.unsaved_changes {
+                    document_state.unsaved_changes = false;
+                    app.state.reload_subtitle_documents().await;
+                    if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
+                        app.state.subtitle_documents.set_language(active_variant);
+                    }
+                }
             } else {
                 app.state.quit = true
             }
@@ -41,10 +37,10 @@ pub async fn handle_key<R: Renderer>(
 
         // Save
         KeyCode::Char('s') if key.modifiers == KeyModifiers::CONTROL => {
-            match &app.state.subtitle_document {
-                Some(document) => {
-                    document.save()?;
-                    app.state.unsaved_changes = false;
+            match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    document_state.document.save()?;
+                    document_state.unsaved_changes = false;
                 }
                 None => {}
             }
@@ -73,45 +69,50 @@ pub async fn handle_key<R: Renderer>(
 
         // Bulk adjust cue times
         KeyCode::Char('m') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.decrease_all_cue_start_times(config.backwards_cue_increment_small);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut changes {
                             if let Some((i, cue)) =
@@ -143,45 +144,50 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
         KeyCode::Char(',') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.increase_all_cue_start_times(config.forwards_cue_increment_small);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut changes {
                             if let Some((i, cue)) =
@@ -213,8 +219,9 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
         KeyCode::Char('.') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
                     SubtitleCues::Word(cues) => cues
                         .iter()
                         .enumerate()
@@ -243,15 +250,19 @@ pub async fn handle_key<R: Renderer>(
                         .collect::<Vec<CueTimeChange>>(),
                     SubtitleCues::Line(_) => Vec::new(),
                     SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.decrease_all_cue_end_times(config.backwards_cue_increment_small);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut changes {
                             if let Some((i, cue)) =
@@ -283,8 +294,9 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
         KeyCode::Char('/') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
                     SubtitleCues::Word(cues) => cues
                         .iter()
                         .enumerate()
@@ -313,15 +325,18 @@ pub async fn handle_key<R: Renderer>(
                         .collect::<Vec<CueTimeChange>>(),
                     SubtitleCues::Line(_) => Vec::new(),
                     SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.increase_all_cue_end_times(config.forwards_cue_increment_small);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut changes {
                             if let Some((i, cue)) =
@@ -353,8 +368,9 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
         KeyCode::Char('M') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
                     SubtitleCues::Word(cues) => cues
                         .iter()
                         .enumerate()
@@ -383,15 +399,18 @@ pub async fn handle_key<R: Renderer>(
                         .collect::<Vec<CueTimeChange>>(),
                     SubtitleCues::Line(_) => Vec::new(),
                     SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.decrease_all_cue_start_times(config.backwards_cue_increment_large);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut changes {
                             if let Some((i, cue)) =
@@ -423,8 +442,9 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
         KeyCode::Char('<') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
                     SubtitleCues::Word(cues) => cues
                         .iter()
                         .enumerate()
@@ -453,15 +473,18 @@ pub async fn handle_key<R: Renderer>(
                         .collect::<Vec<CueTimeChange>>(),
                     SubtitleCues::Line(_) => Vec::new(),
                     SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.increase_all_cue_start_times(config.forwards_cue_increment_large);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut changes {
                             if let Some((i, cue)) =
@@ -493,8 +516,9 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
         KeyCode::Char('>') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
                     SubtitleCues::Word(cues) => cues
                         .iter()
                         .enumerate()
@@ -523,15 +547,18 @@ pub async fn handle_key<R: Renderer>(
                         .collect::<Vec<CueTimeChange>>(),
                     SubtitleCues::Line(_) => Vec::new(),
                     SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.decrease_all_cue_end_times(config.backwards_cue_increment_large);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut *changes {
                             if let Some((i, cue)) =
@@ -563,8 +590,9 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
         KeyCode::Char('?') => {
-            let mut changes = match &mut app.state.subtitle_document {
-                Some(document) => match &document.cues {
+            let mut changes = match &mut app.state.subtitle_documents.active_mut() {
+                Some(document_state) => {
+                    let changes = match &document_state.document.cues {
                     SubtitleCues::Word(cues) => cues
                         .iter()
                         .enumerate()
@@ -593,15 +621,18 @@ pub async fn handle_key<R: Renderer>(
                         .collect::<Vec<CueTimeChange>>(),
                     SubtitleCues::Line(_) => Vec::new(),
                     SubtitleCues::None => Vec::new(),
+                    };
+
+                    document_state.unsaved_changes = true;
+                    changes
                 },
                 None => Vec::new(),
             };
 
-            app.state.unsaved_changes = true;
             app.increase_all_cue_end_times(config.forwards_cue_increment_large);
 
-            if let Some(document) = &mut app.state.subtitle_document {
-                match &document.cues {
+            if let Some(document_state) = &mut app.state.subtitle_documents.active_mut() {
+                match &document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for change in &mut changes {
                             if let Some((i, cue)) =
@@ -638,7 +669,7 @@ pub async fn handle_key<R: Renderer>(
 
         // download lyrics
         KeyCode::Char('d') => {
-            if app.state.subtitle_document.is_none() {
+            if app.state.subtitle_documents.get_original().is_none() {
                 // store in app? and have app.lyrics_service or something?
                 let lyrics_service = LyricsService::default();
                 let lyrics_provider = lyrics_service.providers.get("lrclib");
@@ -667,7 +698,16 @@ pub async fn handle_key<R: Renderer>(
                     (_, _) => None,
                 };
 
-                app.state.subtitle_document = subtitle_document;
+                if let Some(subtitle_document) = subtitle_document {
+                    app.state.subtitle_documents.insert(
+                        SubtitleVariant::Original,
+                        SubtitleDocumentState::new(subtitle_document),
+                    );
+                }
+
+                if app.state.subtitle_documents.active().is_none() {
+                    app.state.subtitle_documents.select_default();
+                }
             }
         }
 

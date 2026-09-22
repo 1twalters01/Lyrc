@@ -12,7 +12,7 @@ where
             self.switch_to_normal_mode();
         }
 
-        match &self.state.subtitle_document {
+        match &self.state.subtitle_documents.active() {
             Some(_) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
@@ -43,13 +43,13 @@ where
 
         self.switch_to_select_mode()?;
 
-        match &self.state.subtitle_document {
-            Some(subtitle_document) => match &mut self.state.app_mode {
+        match &self.state.subtitle_documents.active() {
+            Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
                     cue_index,
                     selected_cues,
-                } => match &subtitle_document.cues {
+                } => match &subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         if selected_cues.is_empty() {
                             *selected_cues = (0..cues.len()).collect::<Vec<usize>>();

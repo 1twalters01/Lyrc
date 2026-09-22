@@ -44,7 +44,10 @@ impl TranslationWorker {
                             let argos_result = ArgosTranslator.translate(language, subtitle_document);
 
                             let result = match argos_result.await {
-                                Ok(subtitle_document) => TranslationResult::Complete(subtitle_document),
+                                Ok(subtitle_document) => match subtitle_document {
+                                    Some(document) => TranslationResult::Complete(Some((document, language))),
+                                    None => TranslationResult::Complete(None)
+                                }
                                 Err(error) => TranslationResult::Failed(error),
                             };
 

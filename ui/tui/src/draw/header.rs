@@ -34,8 +34,10 @@ pub fn draw_header(frame: &mut Frame, area: Rect, state: &AppState, position: Op
     };
 
     let mut header = format!("{} - {} - {}/{}", title, artist, position_str, duration);
-    if state.unsaved_changes {
-        header.push_str("\nunsaved changes");
+    if let Some(document_state) = state.subtitle_documents.active() {
+        if document_state.unsaved_changes {
+            header.push_str("\nunsaved changes");
+        }
     }
 
     frame.render_widget(Paragraph::new(header), area);

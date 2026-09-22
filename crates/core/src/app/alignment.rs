@@ -17,11 +17,14 @@ where
             return Ok(());
         }
 
-        let (track, subtitle_document) = match (&self.state.track, &self.state.subtitle_document) {
-            (Some(track), Some(subtitle_document)) => (track, subtitle_document),
-            (None, _) => return Err(Box::new(AlignmentError::NoAudioFilePath)),
-            (_, None) => return Err(Box::new(AlignmentError::NoSubtitles)),
-        };
+        let (track, subtitle_document) =
+            match (&self.state.track, &self.state.subtitle_documents.active()) {
+                (Some(track), Some(subtitle_document_state)) => {
+                    (track, subtitle_document_state.document.clone())
+                }
+                (None, _) => return Err(Box::new(AlignmentError::NoAudioFilePath)),
+                (_, None) => return Err(Box::new(AlignmentError::NoSubtitles)),
+            };
 
         let audio_file_path = match &track.file_path {
             Some(path) => path,

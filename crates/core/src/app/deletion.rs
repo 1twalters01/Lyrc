@@ -11,13 +11,13 @@ where
             self.switch_to_normal_mode();
         }
 
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut self.state.app_mode {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
                     cue_index,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for index in selected_cues.iter().rev() {
                             cues.remove(*index);
@@ -50,7 +50,7 @@ where
                 AppMode::Edit {
                     cursor,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for cue in selected_cues.iter().rev() {
                             cues.remove(cue.index);
@@ -101,13 +101,13 @@ where
             self.switch_to_normal_mode();
         }
 
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut self.state.app_mode {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
                     cue_index,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         selected_cues.retain(|c_index| c_index != cue_index);
                         cues.remove(*cue_index);
@@ -126,7 +126,7 @@ where
                     cursor,
                     // cue_index,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         selected_cues.retain(|cue| cue.index != cursor.cue_index);
                         cues.remove(cursor.cue_index);
@@ -152,8 +152,8 @@ where
         }
 
         indexed_cues.sort_by_key(|c| c.index);
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut subtitle_document.cues {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut subtitle_document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     for indexed_cue in indexed_cues.iter().rev() {
                         cues.remove(indexed_cue.index);

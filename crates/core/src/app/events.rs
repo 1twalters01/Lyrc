@@ -1,9 +1,15 @@
 use alignment::messages::AlignmentResult;
 use chrono::Duration;
 use mpris::playback::{PlaybackStatus, PlayerEvent};
+use subtitles::subtitles::SyncLevel;
 use translation::messages::TranslationResult;
 
-use crate::{app::App, renderer::Renderer, synchronizer::SynchronizerMode};
+use crate::{
+    app::App,
+    renderer::Renderer,
+    state::{SubtitleDocumentState, SubtitleVariant},
+    synchronizer::SynchronizerMode,
+};
 
 impl<R> App<R>
 where
@@ -15,8 +21,10 @@ where
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.state.update(&mut self.mpris_client, &event).await?;
         self.clock.update(event);
-        self.synchronizer
-            .update(&self.state.subtitle_document, &self.clock.get_position());
+        self.synchronizer.update(
+            &self.state.subtitle_documents.active(),
+            &self.clock.get_position(),
+        );
 
         self.render()?;
         Ok(())
@@ -28,17 +36,29 @@ where
     ) -> Result<(), Box<dyn std::error::Error>> {
         match event {
             AlignmentResult::Complete(subtitle_document) => {
-                self.state.subtitle_document = subtitle_document.clone();
                 self.state.alignment_running = false;
-                self.synchronizer.mode = SynchronizerMode::Word;
-            }
+                if let Some(subtitle_document) = subtitle_document {
+                    let new_sync_level = subtitle_document.sync_level();
+                    let insert_res = self.state.subtitle_documents.insert(
+                        SubtitleVariant::Original,
+                        SubtitleDocumentState::new(subtitle_document),
+                    );
+                    if insert_res {
+                        match new_sync_level {
+                            SyncLevel::Word => self.synchronizer.mode = SynchronizerMode::Word,
+                            SyncLevel::Cue => self.synchronizer.mode = SynchronizerMode::Cue,
+                            _ => self.synchronizer.mode = SynchronizerMode::None,
+                        }
+                    }
+                }
+            },
             AlignmentResult::Cancelled => {
                 self.state.alignment_running = false;
-            }
+            },
             AlignmentResult::Failed(error) => {
                 self.state.alignment_running = false;
                 return Err(Box::new(error));
-            }
+            },
         }
 
         Ok(())
@@ -49,16 +69,30 @@ where
         event: TranslationResult,
     ) -> Result<(), Box<dyn std::error::Error>> {
         match event {
-            TranslationResult::Complete(subtitle_document) => {
+            TranslationResult::Complete(result) => {
                 self.state.translation_running = false;
-            }
+                if let Some((subtitle_document, language)) = result {
+                    let new_sync_level = subtitle_document.sync_level();
+                    let insert_res = self.state.subtitle_documents.insert(
+                        SubtitleVariant::Translated(language),
+                        SubtitleDocumentState::new(subtitle_document),
+                    );
+                    if insert_res {
+                        match new_sync_level {
+                            SyncLevel::Word => self.synchronizer.mode = SynchronizerMode::Word,
+                            SyncLevel::Cue => self.synchronizer.mode = SynchronizerMode::Cue,
+                            _ => self.synchronizer.mode = SynchronizerMode::None,
+                        }
+                    }
+                }
+            },
             TranslationResult::Cancelled => {
                 self.state.translation_running = false;
-            }
+            },
             TranslationResult::Failed(error) => {
                 self.state.translation_running = false;
                 return Err(Box::new(error));
-            }
+            },
         }
 
         Ok(())
@@ -77,7 +111,7 @@ where
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.clock.sync(current_position, playback_status)?;
 
-        let subtitle_document = &self.state.subtitle_document;
+        let subtitle_document = &self.state.subtitle_documents.active();
         let position = self.clock.get_position();
         self.synchronizer.update(subtitle_document, &position);
 

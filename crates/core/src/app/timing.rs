@@ -20,8 +20,8 @@ where
 
         changes.sort_by_key(|c| std::cmp::Reverse(c.old_index));
 
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut subtitle_document.cues {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut subtitle_document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     let mut items = Vec::new();
                     for change in changes {
@@ -148,8 +148,8 @@ where
             *cue_index
         }
 
-        match (&mut self.state.subtitle_document, &self.state.track) {
-            (Some(document), Some(track)) => {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
+            (Some(document_state), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
                         return Err(String::from("Cannot be in normal mode"));
@@ -160,7 +160,7 @@ where
                     } => {
                         let old_cue_index = cue_index.clone();
                         let new_cue_index =
-                            update_cue_index(document, cue_index, new_position, track);
+                            update_cue_index(&mut document_state.document, cue_index, new_position, track);
 
                         for selected_cue in &mut *selected_cues {
                             if *selected_cue == old_cue_index {
@@ -183,7 +183,7 @@ where
                     } => {
                         let old_cue_index = cursor.cue_index.clone();
                         let new_cue_index =
-                            update_cue_index(document, &mut cursor.cue_index, new_position, track);
+                            update_cue_index(&mut document_state.document, &mut cursor.cue_index, new_position, track);
 
                         for selected_cue in &mut *selected_cues {
                             if selected_cue.index == old_cue_index {
@@ -195,7 +195,7 @@ where
                             }
                         }
 
-                        let line_length = document.cues.cue_len(new_cue_index);
+                        let line_length = document_state.document.cues.cue_len(new_cue_index);
                         let new_cursor = Cursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
@@ -253,8 +253,8 @@ where
             *cue_index
         }
 
-        match (&mut self.state.subtitle_document, &self.state.track) {
-            (Some(document), Some(track)) => {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
+            (Some(document_state), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
                         return Err(String::from("Cannot be in normal mode"));
@@ -263,7 +263,7 @@ where
                         cue_index,
                         selected_cues,
                     } => AppMode::Select {
-                        cue_index: update_cue_index(document, cue_index, new_position, track),
+                        cue_index: update_cue_index(&mut document_state.document, cue_index, new_position, track),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -271,8 +271,8 @@ where
                         selected_cues,
                     } => {
                         let new_cue_index =
-                            update_cue_index(document, &mut cursor.cue_index, new_position, track);
-                        let line_length = document.cues.cue_len(new_cue_index);
+                            update_cue_index(&mut document_state.document, &mut cursor.cue_index, new_position, track);
+                        let line_length = document_state.document.cues.cue_len(new_cue_index);
                         let new_cursor = Cursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
@@ -355,8 +355,8 @@ where
             *cue_index
         }
 
-        match (&mut self.state.subtitle_document, &self.state.track) {
-            (Some(document), Some(track)) => {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
+            (Some(document_state), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
                         return Err(String::from("Cannot be in normal mode"));
@@ -367,7 +367,7 @@ where
                     } => {
                         let old_cue_index = cue_index.clone();
                         let new_cue_index =
-                            increase_cue_index(document, cue_index, forwards_cue_increment, track);
+                            increase_cue_index(&mut document_state.document, cue_index, forwards_cue_increment, track);
 
                         for selected_cue in &mut *selected_cues {
                             if *selected_cue == old_cue_index {
@@ -390,7 +390,7 @@ where
                     } => {
                         let old_cue_index = cursor.cue_index.clone();
                         let new_cue_index = increase_cue_index(
-                            document,
+                            &mut document_state.document,
                             &mut cursor.cue_index,
                             forwards_cue_increment,
                             track,
@@ -406,7 +406,7 @@ where
                             }
                         }
 
-                        let line_length = document.cues.cue_len(new_cue_index);
+                        let line_length = document_state.document.cues.cue_len(new_cue_index);
                         let new_cursor = Cursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
@@ -457,8 +457,8 @@ where
             *cue_index
         }
 
-        match (&mut self.state.subtitle_document, &self.state.track) {
-            (Some(document), Some(track)) => {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
+            (Some(document_state), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
                         return Err(String::from("Cannot be in normal mode"));
@@ -468,7 +468,7 @@ where
                         selected_cues,
                     } => AppMode::Select {
                         cue_index: increase_cue_index(
-                            document,
+                            &mut document_state.document,
                             cue_index,
                             forwards_cue_increment,
                             track,
@@ -480,12 +480,12 @@ where
                         selected_cues,
                     } => {
                         let new_cue_index = increase_cue_index(
-                            document,
+                            &mut document_state.document,
                             &mut cursor.cue_index,
                             forwards_cue_increment,
                             track,
                         );
-                        let line_length = document.cues.cue_len(new_cue_index);
+                        let line_length = document_state.document.cues.cue_len(new_cue_index);
                         let new_cursor = Cursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -549,8 +549,8 @@ where
             *cue_index
         }
 
-        match &mut self.state.subtitle_document {
-            Some(document) => {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(document_state) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
                         return Err(String::from("Cannot be in normal mode"));
@@ -559,7 +559,7 @@ where
                         cue_index,
                         selected_cues,
                     } => AppMode::Select {
-                        cue_index: decrease_cue_index(document, cue_index, backwards_cue_increment),
+                        cue_index: decrease_cue_index(&mut document_state.document, cue_index, backwards_cue_increment),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -567,11 +567,11 @@ where
                         selected_cues,
                     } => {
                         let new_cue_index = decrease_cue_index(
-                            document,
+                            &mut document_state.document,
                             &mut cursor.cue_index,
                             backwards_cue_increment,
                         );
-                        let line_length = document.cues.cue_len(new_cue_index);
+                        let line_length = document_state.document.cues.cue_len(new_cue_index);
                         let new_cursor = Cursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -627,8 +627,8 @@ where
             *cue_index
         }
 
-        match &mut self.state.subtitle_document {
-            Some(document) => {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(document_state) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
                         return Err(String::from("Cannot be in normal mode"));
@@ -637,7 +637,7 @@ where
                         cue_index,
                         selected_cues,
                     } => AppMode::Select {
-                        cue_index: decrease_cue_index(document, cue_index, backwards_cue_increment),
+                        cue_index: decrease_cue_index(&mut document_state.document, cue_index, backwards_cue_increment),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -645,11 +645,11 @@ where
                         selected_cues,
                     } => {
                         let new_cue_index = decrease_cue_index(
-                            document,
+                            &mut document_state.document,
                             &mut cursor.cue_index,
                             backwards_cue_increment,
                         );
-                        let line_length = document.cues.cue_len(new_cue_index);
+                        let line_length = document_state.document.cues.cue_len(new_cue_index);
                         let new_cursor = Cursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -665,8 +665,8 @@ where
     }
 
     pub fn increase_all_cue_start_times(&mut self, forwards_cue_increment: Duration) {
-        match (&mut self.state.subtitle_document, &self.state.track) {
-            (Some(document), Some(track)) => match &mut document.cues {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
+            (Some(document_state), Some(track)) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     for i in 0..cues.len() {
                         let cue = &mut cues[i];
@@ -714,8 +714,8 @@ where
     }
 
     pub fn increase_all_cue_end_times(&mut self, forwards_cue_increment: Duration) {
-        match (&mut self.state.subtitle_document, &self.state.track) {
-            (Some(document), Some(track)) => match &mut document.cues {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
+            (Some(document_state), Some(track)) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     for i in 0..cues.len() {
                         let cue = &mut cues[i];
@@ -749,8 +749,8 @@ where
     }
 
     pub fn decrease_all_cue_start_times(&mut self, backwards_cue_increment: Duration) {
-        match &mut self.state.subtitle_document {
-            Some(document) => match &mut document.cues {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(document_state) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     for cue in &mut *cues {
                         let new_start = cue.start - backwards_cue_increment;
@@ -782,8 +782,8 @@ where
     }
 
     pub fn decrease_all_cue_end_times(&mut self, backwards_cue_increment: Duration) {
-        match &mut self.state.subtitle_document {
-            Some(document) => match &mut document.cues {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(document_state) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     for cue in &mut *cues {
                         let new_end = cue.end - backwards_cue_increment;
@@ -826,7 +826,7 @@ where
         &mut self,
         forwards_cue_increment: Duration,
     ) -> Result<(), String> {
-        match (&mut self.state.subtitle_document, &self.state.track) {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
             (Some(document), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
@@ -852,7 +852,7 @@ where
         &mut self,
         forwards_cue_increment: Duration,
     ) -> Result<(), String> {
-        match (&mut self.state.subtitle_document, &self.state.track) {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
             (Some(document), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
@@ -878,7 +878,7 @@ where
         &mut self,
         backwards_cue_increment: Duration,
     ) -> Result<(), String> {
-        match (&mut self.state.subtitle_document, &self.state.track) {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
             (Some(document), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {
@@ -904,7 +904,7 @@ where
         &mut self,
         backwards_cue_increment: Duration,
     ) -> Result<(), String> {
-        match (&mut self.state.subtitle_document, &self.state.track) {
+        match (&mut self.state.subtitle_documents.active_mut(), &self.state.track) {
             (Some(document), Some(track)) => {
                 match &mut self.state.app_mode {
                     AppMode::Normal => {

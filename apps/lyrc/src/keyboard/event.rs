@@ -36,6 +36,6 @@ pub async fn handle_keyboard_event<R: Renderer>(
         AppMode::Edit {
             cursor,
             selected_cues,
-        } => keyboard::edit::handle_key(app, key, *cursor, selected_cues.clone(), &config),
+        } => keyboard::edit::handle_key(app, key, *cursor, selected_cues.clone(), &config).await,
     }
 }

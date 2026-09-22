@@ -14,8 +14,9 @@ pub async fn handle_key<R: Renderer>(
     cue_index: usize,
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let document = match &mut app.state.subtitle_document {
-        Some(document) => document,
+    let mut document_state = app.state.subtitle_documents.active_mut();
+    let document_state = match &mut document_state {
+        Some(document_state) => document_state,
         None => {
             app.switch_to_normal_mode();
             return Ok(());
@@ -31,23 +32,11 @@ pub async fn handle_key<R: Renderer>(
 
         // Save
         KeyCode::Char('s') if key.modifiers == KeyModifiers::CONTROL => {
-            match &app.state.subtitle_document {
-                Some(document) => {
-                    document.save()?;
-                    app.state.unsaved_changes = false;
-                    app.state.subtitle_document = match app.state.track {
-                        Some(ref track) => match &track.file_path {
-                            Some(file_path) => {
-                                let mut lyrics_path = file_path.to_path_buf();
-                                lyrics_path.set_extension("lrc");
-                                SubtitleDocument::from_pathbuf(lyrics_path).ok()
-                            }
-                            None => None,
-                        },
-                        None => None,
-                    };
-                }
-                None => {}
+            document_state.document.save()?;
+            document_state.unsaved_changes = false;
+            app.state.reload_subtitle_documents().await;
+            if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
+                app.state.subtitle_documents.set_language(active_variant);
             }
         }
 
@@ -57,20 +46,11 @@ pub async fn handle_key<R: Renderer>(
 
         // Mode change
         KeyCode::Esc => {
-            if app.state.unsaved_changes == true {
-                app.state.unsaved_changes = false;
-                app.state.subtitle_document = match app.state.track {
-                    Some(ref track) => match &track.file_path {
-                        Some(file_path) => {
-                            let mut lyrics_path = file_path.to_path_buf();
-                            lyrics_path.set_extension("lrc");
-                            SubtitleDocument::from_pathbuf(lyrics_path).ok()
-                        }
-                        None => None,
-                    },
-                    None => None,
-                };
-                app.state.edit_history.empty();
+            if document_state.unsaved_changes == true {
+                app.state.reload_subtitle_documents().await;
+                if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
+                    app.state.subtitle_documents.set_language(active_variant);
+                }
             } else {
                 app.switch_to_normal_mode()
             }
@@ -91,7 +71,7 @@ pub async fn handle_key<R: Renderer>(
         KeyCode::Char('H') => app.toggle_select_all_lines()?,
         KeyCode::Char('h') => app.toggle_select_line(),
 
-        KeyCode::Char('D') => match &mut document.cues {
+        KeyCode::Char('D') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cues = match &app.state.app_mode {
                     AppMode::Normal => Vec::new(),
@@ -117,8 +97,8 @@ pub async fn handle_key<R: Renderer>(
                         .collect(),
                 };
 
+                document_state.unsaved_changes = true;
                 app.delete_selected_lines();
-                app.state.unsaved_changes = true;
                 let edit = Edit::DeleteCue { cues };
                 app.push_to_history(edit);
             }
@@ -147,8 +127,8 @@ pub async fn handle_key<R: Renderer>(
                         .collect(),
                 };
 
+                document_state.unsaved_changes = true;
                 app.delete_selected_lines();
-                app.state.unsaved_changes = true;
                 let edit = Edit::DeleteCue { cues };
                 app.push_to_history(edit);
             }
@@ -177,8 +157,8 @@ pub async fn handle_key<R: Renderer>(
                         .collect(),
                 };
 
+                document_state.unsaved_changes = true;
                 app.delete_selected_lines();
-                app.state.unsaved_changes = true;
                 let edit = Edit::DeleteCue { cues };
                 app.push_to_history(edit);
             }
@@ -192,7 +172,7 @@ pub async fn handle_key<R: Renderer>(
         KeyCode::Char('i') => app.add_cue_after_selected_cues(),
 
         // Adjust cue time
-        KeyCode::Char('m') => match &mut document.cues {
+        KeyCode::Char('m') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -215,7 +195,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(config.backwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -243,7 +223,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(config.backwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -252,7 +232,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::Line(_) => {}
             SubtitleCues::None => {}
         },
-        KeyCode::Char(',') => match &mut document.cues {
+        KeyCode::Char(',') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -275,7 +255,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(config.forwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -303,7 +283,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(config.forwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -312,7 +292,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::Line(_) => {}
             SubtitleCues::None => {}
         },
-        KeyCode::Char('.') => match &mut document.cues {
+        KeyCode::Char('.') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -335,7 +315,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(config.backwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -363,7 +343,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(config.backwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -372,7 +352,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::Line(_) => {}
             SubtitleCues::None => {}
         },
-        KeyCode::Char('/') => match &mut document.cues {
+        KeyCode::Char('/') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -395,7 +375,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(config.forwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -423,7 +403,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(config.forwards_cue_increment_small)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -432,7 +412,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::Line(_) => {}
             SubtitleCues::None => {}
         },
-        KeyCode::Char('M') => match &mut document.cues {
+        KeyCode::Char('M') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -455,7 +435,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(config.backwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -483,7 +463,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(config.backwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -492,7 +472,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::Line(_) => {}
             SubtitleCues::None => {}
         },
-        KeyCode::Char('<') => match &mut document.cues {
+        KeyCode::Char('<') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -515,7 +495,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(config.forwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -543,7 +523,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(config.forwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -552,7 +532,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::Line(_) => {}
             SubtitleCues::None => {}
         },
-        KeyCode::Char('>') => match &mut document.cues {
+        KeyCode::Char('>') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -575,7 +555,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(config.backwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -603,7 +583,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(config.backwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -612,7 +592,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::Line(_) => {}
             SubtitleCues::None => {}
         },
-        KeyCode::Char('?') => match &mut document.cues {
+        KeyCode::Char('?') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cue = &cues[cue_index];
                 let mut changes = Vec::from([CueTimeChange {
@@ -635,7 +615,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(config.forwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -663,7 +643,7 @@ pub async fn handle_key<R: Renderer>(
                     };
                 }
 
-                app.state.unsaved_changes = true;
+                document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(config.forwards_cue_increment_large)?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -673,7 +653,7 @@ pub async fn handle_key<R: Renderer>(
             SubtitleCues::None => {}
         },
         KeyCode::Char('c') => match app.clock.get_position() {
-            Some(position) => match &mut document.cues {
+            Some(position) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     let cue = &cues[cue_index];
                     let mut changes = Vec::from([CueTimeChange {
@@ -696,7 +676,7 @@ pub async fn handle_key<R: Renderer>(
                         };
                     }
 
-                    app.state.unsaved_changes = true;
+                    document_state.unsaved_changes = true;
                     app.set_current_cue_start_time(position)?;
 
                     let edit = Edit::EditCueTimes { changes };
@@ -724,7 +704,7 @@ pub async fn handle_key<R: Renderer>(
                         };
                     }
 
-                    app.state.unsaved_changes = true;
+                    document_state.unsaved_changes = true;
                     app.set_current_cue_start_time(position)?;
 
                     let edit = Edit::EditCueTimes { changes };
@@ -736,7 +716,7 @@ pub async fn handle_key<R: Renderer>(
             None => {}
         },
         KeyCode::Char('C') => match app.clock.get_position() {
-            Some(position) => match &mut document.cues {
+            Some(position) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     let cue = &cues[cue_index];
                     let mut changes = Vec::from([CueTimeChange {
@@ -759,7 +739,7 @@ pub async fn handle_key<R: Renderer>(
                         };
                     }
 
-                    app.state.unsaved_changes = true;
+                    document_state.unsaved_changes = true;
                     app.set_current_cue_end_time(position)?;
 
                     let edit = Edit::EditCueTimes { changes };
@@ -787,7 +767,7 @@ pub async fn handle_key<R: Renderer>(
                         };
                     }
 
-                    app.state.unsaved_changes = true;
+                    document_state.unsaved_changes = true;
                     app.set_current_cue_end_time(position)?;
 
                     let edit = Edit::EditCueTimes { changes };

@@ -12,13 +12,13 @@ where
             self.switch_to_normal_mode();
         }
 
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut self.state.app_mode {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
                     cue_index,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         if cues.len() > *cue_index {
                             let empty_subtitle = AlignedCue {
@@ -61,7 +61,7 @@ where
                 AppMode::Edit {
                     cursor,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         if cues.len() > cursor.cue_index {
                             let empty_subtitle = AlignedCue {
@@ -123,13 +123,13 @@ where
             self.switch_to_normal_mode();
         }
 
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut self.state.app_mode {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
                     cue_index,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         if cues.len() > *cue_index {
                             let empty_subtitle = AlignedCue {
@@ -187,7 +187,7 @@ where
                 AppMode::Edit {
                     cursor,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         if cues.len() > cursor.cue_index {
                             let empty_subtitle = AlignedCue {
@@ -260,13 +260,13 @@ where
             self.switch_to_normal_mode();
         }
 
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut self.state.app_mode {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
                     cue_index,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for i in 0..selected_cues.len() {
                             let index = selected_cues[i] + i;
@@ -318,7 +318,7 @@ where
                 AppMode::Edit {
                     cursor,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for i in 0..selected_cues.len() {
                             let index = selected_cues[i].index + i;
@@ -377,13 +377,13 @@ where
             self.switch_to_normal_mode();
         }
 
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut self.state.app_mode {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
                     cue_index,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for i in 0..selected_cues.len() {
                             let index = selected_cues[i] + i;
@@ -435,7 +435,7 @@ where
                 AppMode::Edit {
                     cursor,
                     selected_cues,
-                } => match &mut subtitle_document.cues {
+                } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for i in 0..selected_cues.len() {
                             let index = selected_cues[i].index + i;
@@ -495,8 +495,8 @@ where
         }
 
         indexed_cues.sort_by_key(|c| c.index);
-        match &mut self.state.subtitle_document {
-            Some(subtitle_document) => match &mut subtitle_document.cues {
+        match &mut self.state.subtitle_documents.active_mut() {
+            Some(subtitle_document_state) => match &mut subtitle_document_state.document.cues {
                 SubtitleCues::Word(cues) => {
                     for indexed_cue in indexed_cues {
                         match indexed_cue.subtitle_cue {

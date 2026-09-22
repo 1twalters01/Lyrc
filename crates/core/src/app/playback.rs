@@ -43,12 +43,12 @@ where
             return Err(String::from("No track was found").into());
         }
 
-        if let Some(ref document) = self.state.subtitle_document {
-            if document.sync_level() == SyncLevel::None {
+        if let Some(ref document_state) = self.state.subtitle_documents.active() {
+            if document_state.document.sync_level() == SyncLevel::None {
                 return Ok(());
             }
 
-            let duration = match &document.cues {
+            let duration = match &document_state.document.cues {
                 SubtitleCues::Word(cues) => cues[cue_index].start,
                 SubtitleCues::Cue(cues) => cues[cue_index].start,
                 SubtitleCues::Line(_) => return Err(String::from("No subtitle times").into()),

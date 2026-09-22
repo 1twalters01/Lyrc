@@ -1,5 +1,4 @@
 use subtitles::subtitles::SubtitleCues;
-use synchronizer::strategies::words;
 
 use crate::{
     app::App,
@@ -16,7 +15,7 @@ where
     }
 
     pub fn switch_to_select_mode(&mut self) -> Result<(), String> {
-        if self.state.subtitle_document.is_none() {
+        if self.state.subtitle_documents.active().is_none() {
             return Err(String::from("No subtitle document found"));
         }
 
@@ -57,8 +56,9 @@ where
     }
 
     pub fn switch_to_edit_mode(&mut self) -> Result<(), String> {
-        let subtitle_document = match &self.state.subtitle_document {
-            Some(subtitle_document) => subtitle_document,
+        let subtitle_document_state = &self.state.subtitle_documents.active();
+        let subtitle_document_state = match &subtitle_document_state {
+            Some(subtitle_document_state) => subtitle_document_state,
             None => return Err(String::from("No subtitle document found")),
         };
 
@@ -73,7 +73,7 @@ where
                     .first()
                     .unwrap_or(&0);
 
-                let original_content = match &subtitle_document.cues {
+                let original_content = match &subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         SubtitleCues::Word(Vec::from([cues[index].clone()]))
                     }
@@ -88,7 +88,7 @@ where
                     index,
                     original_content,
                 }]);
-                let line_length = &subtitle_document.cues.cue_len(index);
+                let line_length = &subtitle_document_state.document.cues.cue_len(index);
                 let cursor = Cursor::new(index, *line_length);
                 (cursor, selected_edit_cues.clone())
             }
@@ -100,7 +100,7 @@ where
                     .iter()
                     .map(|index| EditCue {
                         index: *index,
-                        original_content: match &subtitle_document.cues {
+                        original_content: match &subtitle_document_state.document.cues {
                             SubtitleCues::Word(cues) => {
                                 SubtitleCues::Word(Vec::from([cues[*index].clone()]))
                             }
@@ -114,7 +114,7 @@ where
                         },
                     })
                     .collect::<Vec<EditCue>>();
-                let line_length = &subtitle_document.cues.cue_len(*cue_index);
+                let line_length = &subtitle_document_state.document.cues.cue_len(*cue_index);
                 let cursor = Cursor::new(*cue_index, *line_length);
                 (cursor, selected_edit_cues.clone())
             }

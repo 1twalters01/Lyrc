@@ -73,6 +73,10 @@ impl SubtitleDocuments {
         self.active_variant = None;
     }
 
+    pub fn active_variant(&self) -> Option<SubtitleVariant> {
+        self.active_variant.clone()
+    }
+
     pub fn active(&self) -> Option<&SubtitleDocumentState> {
         match &self.active_variant {
             Some(language) => self.documents.get(&language),
@@ -85,6 +89,22 @@ impl SubtitleDocuments {
             Some(language) => self.documents.get_mut(&language),
             None => None,
         }
+    }
+
+    pub fn get_from_variant(&self, variant: SubtitleVariant) -> Option<&SubtitleDocumentState> {
+        self.documents.get(&variant)
+    }
+
+    pub fn get_from_variant_mut(&mut self, variant: SubtitleVariant) -> Option<&mut SubtitleDocumentState> {
+        self.documents.get_mut(&variant)
+    }
+
+    pub fn get_original(&self) -> Option<&SubtitleDocumentState> {
+        self.documents.get(&SubtitleVariant::Original)
+    }
+
+    pub fn get_original_mut(&mut self) -> Option<&mut SubtitleDocumentState> {
+        self.documents.get_mut(&SubtitleVariant::Original)
     }
 
     pub fn set_language(&mut self, language: SubtitleVariant) -> bool {
@@ -100,8 +120,15 @@ impl SubtitleDocuments {
         &mut self,
         subtitle_variant: SubtitleVariant,
         document_state: SubtitleDocumentState,
-    ) {
+    ) -> bool {
+        if let Some(original_state) = self.documents.get(&subtitle_variant) {
+            if original_state.document.sync_level() <= document_state.document.sync_level() {
+                return false
+            }
+        };
+
         self.documents.insert(subtitle_variant, document_state);
+        true
     }
 }
 
