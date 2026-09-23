@@ -69,29 +69,56 @@ impl SubtitleDocument {
     pub fn write(
         subtitle_document: &SubtitleDocument,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        match &subtitle_document.metadata.file_path {
-            Some(file_path) => match file_path.extension() {
-                Some(os_str) => match os_str.to_str() {
-                    Some("elrc") => {
-                        let writer = ElrcWriter;
-                        let file = writer.write(&subtitle_document.clone())?;
-                        Ok(file)
-                    }
-                    Some("lrc") => {
-                        let writer = LrcWriter;
-                        let file = writer.write(&subtitle_document.clone())?;
-                        Ok(file)
-                    }
-                    Some(_) => Err(String::from("unknown file type").into()),
-                    None => Err(String::from("os str cannot be turned into a &str").into()),
-                },
-                None => Err(String::from("File does not have an extension").into()),
-            },
-            None => Err(String::from("File path does not exist").into()),
+        if let Some(file_path) = &subtitle_document.metadata.file_path {
+            if let Some(extension) = file_path.extension() {
+                if let None = extension.to_str() {
+                    return Err(String::from("os str cannot be turned into a &str").into())
+                }
+            } else {
+                return Err(String::from("File does not have an extension").into())
+            }
+        } else {
+            return Err(String::from("File path does not exist").into());
         }
+
+        match subtitle_document.sync_level() {
+            SyncLevel::Phoneme => Err(String::from("No Writer Available").into()),
+            SyncLevel::Word => {
+                let writer = ElrcWriter;
+                let file = writer.write(&subtitle_document.clone())?;
+                Ok(file)
+            },
+            SyncLevel::Cue => {
+                let writer = LrcWriter;
+                let file = writer.write(&subtitle_document.clone())?;
+                Ok(file)
+            },
+            SyncLevel::None => Err(String::from("Invalid file").into()),
+        }
+        // match &subtitle_document.metadata.file_path {
+        //     Some(file_path) => match file_path.extension() {
+        //         Some(os_str) => match os_str.to_str() {
+        //             Some("elrc") => {
+        //                 let writer = ElrcWriter;
+        //                 let file = writer.write(&subtitle_document.clone())?;
+        //                 Ok(file)
+        //             }
+        //             Some("lrc") => {
+        //                 let writer = LrcWriter;
+        //                 let file = writer.write(&subtitle_document.clone())?;
+        //                 Ok(file)
+        //             }
+        //             Some(_) => Err(String::from("unknown file type").into()),
+        //             None => Err(String::from("os str cannot be turned into a &str").into()),
+        //         },
+        //         None => Err(String::from("File does not have an extension").into()),
+        //     },
+        //     None => Err(String::from("File path does not exist").into()),
+        // }
     }
 
     pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("file path: {:?}", &self.metadata.file_path);
         match &self.metadata.file_path {
             Some(file_path) => {
                 let file = SubtitleDocument::write(self)?;

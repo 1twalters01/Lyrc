@@ -122,7 +122,7 @@ impl SubtitleDocuments {
         document_state: SubtitleDocumentState,
     ) -> bool {
         if let Some(original_state) = self.documents.get(&subtitle_variant) {
-            if original_state.document.sync_level() <= document_state.document.sync_level() {
+            if original_state.document.sync_level() >= document_state.document.sync_level() {
                 return false
             }
         };

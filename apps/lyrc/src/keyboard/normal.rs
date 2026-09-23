@@ -677,17 +677,19 @@ pub async fn handle_key<R: Renderer>(
                 let subtitle_document = match (lyrics_provider, track) {
                     (Some(provider), Some(track)) => {
                         let lyrics = provider.search(track.clone()).await?;
+                        let mut document_path = None;
                         if let Some(lyrics) = lyrics {
                             match lyrics.format {
                                 LyricsFormat::Lrc => {
                                     if let Some(file_path) = track.file_path {
                                         let mut lrc_path = file_path.to_path_buf();
                                         lrc_path.set_extension("lrc");
-                                        println!("lrc path: {:?}", lrc_path);
-
-                                        std::fs::write(&lrc_path, &lyrics.content)?;
+                                        document_path = Some(lrc_path);
                                     }
-                                    Some(LrcParser.parse(&lyrics.content)?)
+                                    let mut document = LrcParser.parse(&lyrics.content)?;
+                                    document.metadata.file_path = document_path;
+
+                                    Some(document)
                                 }
                                 LyricsFormat::Text => None,
                             }

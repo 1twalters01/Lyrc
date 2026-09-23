@@ -41,8 +41,10 @@ where
                     let new_sync_level = subtitle_document.sync_level();
                     let insert_res = self.state.subtitle_documents.insert(
                         SubtitleVariant::Original,
-                        SubtitleDocumentState::new(subtitle_document),
+                        // SubtitleDocumentState::new(subtitle_document),
+                        SubtitleDocumentState::new(subtitle_document.clone()),
                     );
+                    println!("\ninsert result: {}, sync level: {:?}", insert_res, subtitle_document.sync_level());
                     if insert_res {
                         match new_sync_level {
                             SyncLevel::Word => self.synchronizer.mode = SynchronizerMode::Word,

@@ -54,6 +54,7 @@ impl AlignmentWorker {
                             Ok(subtitle_document) => AlignmentResult::Complete(subtitle_document),
                             Err(error) => AlignmentResult::Failed(error),
                         };
+                        // println!("\ndone");
 
                         if result_tx.blocking_send(result).is_err() {
                             break;
