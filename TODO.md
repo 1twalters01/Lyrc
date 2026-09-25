@@ -1,16 +1,16 @@
 # V1
 ## Todo
 * Have a proper config module
-    [ ] Read from toml/json file 
+    - [ ] Read from toml/json file 
 
 * Handle event for change in playback speed
 
 * Add download providers
-    [ ] Test Musixmatch
+    - [ ] Test Musixmatch
 
 * Have defined requirements
 
-* Allow language switching on the fly
+* Allow choosing the language to translate a file to
 
 * Add error types to python libraries instead of just raising an error
 
@@ -28,7 +28,8 @@
     - [x] No alignment to Cue level alignment ---> This is currently scuffed
 - [ ] Can Translate lyrics 
     - [x] Can use Argos translator to translate lyrics
-    - [ ] Can switch the displayed lyrics language
+    - [x] Can switch the displayed lyrics language
+    - [ ] Can choose the language to switch to whilst in the app
 - [x] Can automatically read the best aligned file type for a track (elrc, lrc, txt)
 - [ ] Can save and reload lyrics correctly
     - [x] Can save subtitles

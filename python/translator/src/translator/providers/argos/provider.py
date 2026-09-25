@@ -6,6 +6,17 @@ from translator.providers.argos.options import ArgosOptions
 import argostranslate.package
 import argostranslate.translate
 
+
+# Mute logs
+import logging
+import warnings
+def configure_quiet_mode() -> None:
+    logging.disable(logging.CRITICAL)
+    warnings.filterwarnings("ignore")
+
+configure_quiet_mode()
+
+
 class ArgosTranslator(TranslationProvider[ArgosOptions]):
     def __init__(self):
         pass

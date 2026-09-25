@@ -6,7 +6,7 @@ use lyrc_core::{
     mode::AppMode,
     renderer::Renderer,
 };
-use subtitles::subtitles::{SubtitleCues, SubtitleDocument};
+use subtitles::subtitles::SubtitleCues;
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
@@ -25,7 +25,6 @@ pub async fn handle_key<R: Renderer>(
 
     match key.code {
         // Quit
-        KeyCode::Char('q') => app.state.quit = true,
         KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
             app.state.quit = true;
         }
@@ -36,7 +35,7 @@ pub async fn handle_key<R: Renderer>(
             document_state.unsaved_changes = false;
             app.state.reload_subtitle_documents().await;
             if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
-                app.state.subtitle_documents.set_language(active_variant);
+                app.state.subtitle_documents.set_variant(active_variant);
             }
         }
 
@@ -49,7 +48,7 @@ pub async fn handle_key<R: Renderer>(
             if document_state.unsaved_changes == true {
                 app.state.reload_subtitle_documents().await;
                 if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
-                    app.state.subtitle_documents.set_language(active_variant);
+                    app.state.subtitle_documents.set_variant(active_variant);
                 }
             } else {
                 app.switch_to_normal_mode()

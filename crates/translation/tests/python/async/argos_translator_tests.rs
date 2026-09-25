@@ -8,7 +8,7 @@ async fn translator_test() -> pyo3::PyResult<()> {
     let root_file_str = String::from(
         "/data/Languages/Spanish/music/Kali Uchis/2020 - Sin Miedo (del Amor y Otros Demonios) ∞ (Deluxe Vers)/09 de nadie",
     );
-    let audio_file_string = root_file_str.clone() + ".flac";
+    // let audio_file_string = root_file_str.clone() + ".flac";
     let lrc_file_string = root_file_str + ".lrc";
 
     let lrc_file_path = PathBuf::from_str(&lrc_file_string).unwrap();

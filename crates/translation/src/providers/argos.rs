@@ -3,7 +3,7 @@ use pyo3::{
     prelude::*,
     types::{PyDict, PyList},
 };
-use pyo3_async_runtimes::tokio::into_future;
+use pyo3_async_runtimes::{TaskLocals, into_future_with_locals};
 use subtitles::{
     language::Language,
     subtitles::{SubtitleCues, SubtitleDocument},
@@ -21,6 +21,7 @@ impl LyricsTranslator for ArgosTranslator {
         &self,
         language: Language,
         subtitle_document: SubtitleDocument,
+        locals: TaskLocals,
     ) -> BoxFuture<'_, Result<Option<SubtitleDocument>, TranslationError>> {
         Box::pin(async move {
             let original_language = subtitle_document
@@ -30,7 +31,8 @@ impl LyricsTranslator for ArgosTranslator {
                 .ok_or(TranslationError::NoLanguageCode)?;
 
             let py_translated_cues =
-                Self::translate_cues(original_language, &language, &subtitle_document).await?;
+                Self::translate_cues(original_language, &language, &subtitle_document, &locals)
+                    .await?;
 
             convert_py_cues_to_translated_subtitle_document(
                 py_translated_cues,
@@ -46,8 +48,9 @@ impl ArgosTranslator {
         original_language: &Language,
         language: &Language,
         subtitle_document: &SubtitleDocument,
+        locals: &TaskLocals,
     ) -> Result<Py<PyAny>, TranslationError> {
-        Python::attach(|py| -> PyResult<_> {
+        let result = Python::attach(|py| -> PyResult<_> {
             let datetime = py.import("datetime")?;
             let timedelta = datetime.getattr("timedelta")?;
 
@@ -132,10 +135,10 @@ impl ArgosTranslator {
                 "translate",
                 ("argos", lrc_contents, to_language_py, options),
             )?;
-
-            into_future(coroutine)
-        })?
-        .await
+            into_future_with_locals(locals, coroutine)
+        })?;
+        
+        result.await
         .map_err(|e| TranslationError::PythonError { error: e })
     }
 }

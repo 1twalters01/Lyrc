@@ -3,14 +3,15 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lyrc_core::{
     app::App,
     history::{CueTimeChange, Edit},
-    renderer::Renderer, state::{SubtitleDocumentState, SubtitleVariant},
+    renderer::Renderer,
+    state::{SubtitleDocumentState, SubtitleVariant},
 };
 use lyrics::{models::LyricsFormat, service::LyricsService};
 use subtitles::{
-    formats::lrc::parser::LrcParser,
-    parser::SubtitleParser,
+    formats::lrc::parser::LrcParser, language::Language, parser::SubtitleParser,
     subtitles::SubtitleCues,
 };
+use translation::{provider::LyricsTranslator, providers::argos::ArgosTranslator};
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
@@ -26,11 +27,13 @@ pub async fn handle_key<R: Renderer>(
                     document_state.unsaved_changes = false;
                     app.state.reload_subtitle_documents().await;
                     if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
-                        app.state.subtitle_documents.set_language(active_variant);
+                        app.state.subtitle_documents.set_variant(active_variant);
                     }
+                } else {
+                    app.state.quit = true;
                 }
             } else {
-                app.state.quit = true
+                app.state.quit = true;
             }
         }
         KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
@@ -105,7 +108,7 @@ pub async fn handle_key<R: Renderer>(
                     document_state.unsaved_changes = true;
 
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -180,7 +183,7 @@ pub async fn handle_key<R: Renderer>(
                     document_state.unsaved_changes = true;
 
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -222,40 +225,40 @@ pub async fn handle_key<R: Renderer>(
             let mut changes = match &mut app.state.subtitle_documents.active_mut() {
                 Some(document_state) => {
                     let changes = match &document_state.document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
                     };
 
                     document_state.unsaved_changes = true;
 
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -297,39 +300,39 @@ pub async fn handle_key<R: Renderer>(
             let mut changes = match &mut app.state.subtitle_documents.active_mut() {
                 Some(document_state) => {
                     let changes = match &document_state.document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
                     };
 
                     document_state.unsaved_changes = true;
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -371,39 +374,39 @@ pub async fn handle_key<R: Renderer>(
             let mut changes = match &mut app.state.subtitle_documents.active_mut() {
                 Some(document_state) => {
                     let changes = match &document_state.document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
                     };
 
                     document_state.unsaved_changes = true;
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -445,39 +448,39 @@ pub async fn handle_key<R: Renderer>(
             let mut changes = match &mut app.state.subtitle_documents.active_mut() {
                 Some(document_state) => {
                     let changes = match &document_state.document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
                     };
 
                     document_state.unsaved_changes = true;
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -519,39 +522,39 @@ pub async fn handle_key<R: Renderer>(
             let mut changes = match &mut app.state.subtitle_documents.active_mut() {
                 Some(document_state) => {
                     let changes = match &document_state.document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
                     };
 
                     document_state.unsaved_changes = true;
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -593,39 +596,39 @@ pub async fn handle_key<R: Renderer>(
             let mut changes = match &mut app.state.subtitle_documents.active_mut() {
                 Some(document_state) => {
                     let changes = match &document_state.document.cues {
-                    SubtitleCues::Word(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Cue(cues) => cues
-                        .iter()
-                        .enumerate()
-                        .map(|(i, cue)| CueTimeChange {
-                            id: cue.id.clone(),
-                            new_index: i,
-                            old_index: i,
-                            new_start: cue.start,
-                            old_start: cue.start,
-                            new_end: cue.end,
-                            old_end: cue.end,
-                        })
-                        .collect::<Vec<CueTimeChange>>(),
-                    SubtitleCues::Line(_) => Vec::new(),
-                    SubtitleCues::None => Vec::new(),
+                        SubtitleCues::Word(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Cue(cues) => cues
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cue)| CueTimeChange {
+                                id: cue.id.clone(),
+                                new_index: i,
+                                old_index: i,
+                                new_start: cue.start,
+                                old_start: cue.start,
+                                new_end: cue.end,
+                                old_end: cue.end,
+                            })
+                            .collect::<Vec<CueTimeChange>>(),
+                        SubtitleCues::Line(_) => Vec::new(),
+                        SubtitleCues::None => Vec::new(),
                     };
 
                     document_state.unsaved_changes = true;
                     changes
-                },
+                }
                 None => Vec::new(),
             };
 
@@ -666,6 +669,10 @@ pub async fn handle_key<R: Renderer>(
 
         // align lyrics
         KeyCode::Char('a') => app.start_alignment().await?,
+
+        // Translate lyrics
+        // Only to French for now
+        KeyCode::Char('t') => app.start_translation(Language::French).await?,
 
         // download lyrics
         KeyCode::Char('d') => {

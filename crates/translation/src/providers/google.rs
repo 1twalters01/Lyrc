@@ -3,7 +3,7 @@ use pyo3::{
     prelude::*,
     types::{PyDict, PyList},
 };
-use pyo3_async_runtimes::tokio::into_future;
+use pyo3_async_runtimes::{TaskLocals, tokio::into_future};
 use subtitles::{
     language::Language,
     subtitles::{SubtitleCues, SubtitleDocument},
@@ -21,6 +21,7 @@ impl LyricsTranslator for GoogleTranslator {
         &self,
         language: Language,
         subtitle_document: SubtitleDocument,
+        locals: TaskLocals,
     ) -> BoxFuture<'_, Result<Option<SubtitleDocument>, TranslationError>> {
         Box::pin(async move {
             let original_language = subtitle_document

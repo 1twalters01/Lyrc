@@ -6,7 +6,7 @@ use mpris::client::MprisClient;
 use tui::renderer::TuiRenderer;
 
 pub async fn run_tui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-    let workers = Workers::start().await;
+    let workers = Workers::start().await?;
 
     let player = &MprisClient::choose_player(&config.targets_in_priority_order).await?;
 

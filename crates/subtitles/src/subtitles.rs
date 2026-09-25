@@ -72,10 +72,10 @@ impl SubtitleDocument {
         if let Some(file_path) = &subtitle_document.metadata.file_path {
             if let Some(extension) = file_path.extension() {
                 if let None = extension.to_str() {
-                    return Err(String::from("os str cannot be turned into a &str").into())
+                    return Err(String::from("os str cannot be turned into a &str").into());
                 }
             } else {
-                return Err(String::from("File does not have an extension").into())
+                return Err(String::from("File does not have an extension").into());
             }
         } else {
             return Err(String::from("File path does not exist").into());
@@ -87,12 +87,12 @@ impl SubtitleDocument {
                 let writer = ElrcWriter;
                 let file = writer.write(&subtitle_document.clone())?;
                 Ok(file)
-            },
+            }
             SyncLevel::Cue => {
                 let writer = LrcWriter;
                 let file = writer.write(&subtitle_document.clone())?;
                 Ok(file)
-            },
+            }
             SyncLevel::None => Err(String::from("Invalid file").into()),
         }
         // match &subtitle_document.metadata.file_path {
@@ -109,10 +109,10 @@ impl SubtitleDocument {
         //                 Ok(file)
         //             }
         //             Some(_) => Err(String::from("unknown file type").into()),
-        //             None => Err(String::from("os str cannot be turned into a &str").into()),
-        //         },
-        //         None => Err(String::from("File does not have an extension").into()),
-        //     },
+        //             None => Err(String::from("os str cannot be turned into a
+        // &str").into()),         },
+        //         None => Err(String::from("File does not have an
+        // extension").into()),     },
         //     None => Err(String::from("File path does not exist").into()),
         // }
     }

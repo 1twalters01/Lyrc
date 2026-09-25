@@ -41,10 +41,8 @@ where
                     let new_sync_level = subtitle_document.sync_level();
                     let insert_res = self.state.subtitle_documents.insert(
                         SubtitleVariant::Original,
-                        // SubtitleDocumentState::new(subtitle_document),
                         SubtitleDocumentState::new(subtitle_document.clone()),
                     );
-                    println!("\ninsert result: {}, sync level: {:?}", insert_res, subtitle_document.sync_level());
                     if insert_res {
                         match new_sync_level {
                             SyncLevel::Word => self.synchronizer.mode = SynchronizerMode::Word,
@@ -52,15 +50,19 @@ where
                             _ => self.synchronizer.mode = SynchronizerMode::None,
                         }
                     }
+
+                    self.state
+                        .subtitle_documents
+                        .set_variant(SubtitleVariant::Original);
                 }
-            },
+            }
             AlignmentResult::Cancelled => {
                 self.state.alignment_running = false;
-            },
+            }
             AlignmentResult::Failed(error) => {
                 self.state.alignment_running = false;
                 return Err(Box::new(error));
-            },
+            }
         }
 
         Ok(())
@@ -86,15 +88,19 @@ where
                             _ => self.synchronizer.mode = SynchronizerMode::None,
                         }
                     }
+
+                    self.state
+                        .subtitle_documents
+                        .set_variant(SubtitleVariant::Translated(language));
                 }
-            },
+            }
             TranslationResult::Cancelled => {
                 self.state.translation_running = false;
-            },
+            }
             TranslationResult::Failed(error) => {
                 self.state.translation_running = false;
                 return Err(Box::new(error));
-            },
+            }
         }
 
         Ok(())

@@ -32,9 +32,9 @@ pub async fn handle_key<R: Renderer>(
             document_state.unsaved_changes = false;
             app.state.reload_subtitle_documents().await;
             if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
-                app.state.subtitle_documents.set_language(active_variant);
+                app.state.subtitle_documents.set_variant(active_variant);
             }
-        },
+        }
 
         // Undo and redo changes
         KeyCode::Char('z') if key.modifiers == KeyModifiers::CONTROL => app.undo(),
@@ -44,7 +44,7 @@ pub async fn handle_key<R: Renderer>(
             if document_state.unsaved_changes == true {
                 app.state.reload_subtitle_documents().await;
                 if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
-                    app.state.subtitle_documents.set_language(active_variant);
+                    app.state.subtitle_documents.set_variant(active_variant);
                 }
             } else {
                 app.switch_to_select_mode()?
@@ -72,7 +72,12 @@ pub async fn handle_key<R: Renderer>(
             AppMode::Edit {
                 cursor,
                 selected_cues: _,
-            } => cursor.move_up(document_state.document.cues.cue_len(cursor.cue_index.saturating_sub(1))),
+            } => cursor.move_up(
+                document_state
+                    .document
+                    .cues
+                    .cue_len(cursor.cue_index.saturating_sub(1)),
+            ),
             _ => {}
         },
         KeyCode::Down => match &mut app.state.app_mode {

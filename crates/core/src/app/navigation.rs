@@ -73,7 +73,8 @@ where
                 selected_cues,
             } => {
                 let mut new_cursor = cursor.clone();
-                let new_line_length = subtitle_document_state.document
+                let new_line_length = subtitle_document_state
+                    .document
                     .cues
                     .cue_len(new_cursor.cue_index.saturating_sub(1));
                 new_cursor.move_up(new_line_length);
@@ -155,7 +156,8 @@ where
                             new_index += 1;
                         }
 
-                        let new_line_length = subtitle_document_state.document.cues.cue_len(new_index);
+                        let new_line_length =
+                            subtitle_document_state.document.cues.cue_len(new_index);
                         let line_count = cues.len();
 
                         let mut new_cursor = cursor.clone();
@@ -172,7 +174,8 @@ where
                             new_index += 1;
                         }
 
-                        let new_line_length = subtitle_document_state.document.cues.cue_len(new_index);
+                        let new_line_length =
+                            subtitle_document_state.document.cues.cue_len(new_index);
                         let line_count = cues.len();
 
                         let mut new_cursor = cursor.clone();
@@ -189,7 +192,8 @@ where
                             new_index += 1;
                         }
 
-                        let new_line_length = subtitle_document_state.document.cues.cue_len(new_index);
+                        let new_line_length =
+                            subtitle_document_state.document.cues.cue_len(new_index);
                         let line_count = cues.len();
 
                         let mut new_cursor = cursor.clone();

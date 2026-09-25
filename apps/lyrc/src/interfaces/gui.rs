@@ -16,7 +16,7 @@ use crossterm::event::{Event, EventStream};
 use futures_util::stream::StreamExt;
 
 pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-    let mut workers = Workers::start().await;
+    let mut workers = Workers::start().await?;
     let player = &MprisClient::choose_player(&config.targets_in_priority_order).await?;
 
     let cue_synchronizer = CueSynchronizer::new();

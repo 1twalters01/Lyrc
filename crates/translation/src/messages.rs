@@ -7,6 +7,7 @@ pub enum TranslationRequest {
     // Cancel,
 }
 
+#[derive(Debug)]
 pub struct TranslationTask {
     pub language: Language,
     pub subtitle_document: SubtitleDocument,
