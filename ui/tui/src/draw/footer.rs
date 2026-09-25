@@ -11,25 +11,26 @@ pub fn draw_footer<A: Debug>(
 ) {
     let automatic_scroll_offset = state.automatic_scroll_offset;
     let mode = state.app_mode.to_string();
+    let modal = state.modal.clone();
 
     let text = match state.app_mode {
         AppMode::Normal => format!(
-            "automatic scroll: {:?}, active cues: {:?}\nmode: {:?}",
-            automatic_scroll_offset, active_cues, mode,
+            "automatic scroll: {:?}, active cues: {:?}\nmode: {:?}\nmodal: {:?}",
+            automatic_scroll_offset, active_cues, mode, modal,
         ),
         AppMode::Select {
             cue_index,
             selected_cues: _,
         } => format!(
-            "selected line: {:?}, automatic scroll: {:?}\nactive cues: {:?} mode: {:?}",
-            cue_index, automatic_scroll_offset, active_cues, mode,
+            "selected line: {:?}, automatic scroll: {:?}\nactive cues: {:?} mode: {:?}\nmodal: {:?}",
+            cue_index, automatic_scroll_offset, active_cues, mode, modal,
         ),
         AppMode::Edit {
             cursor,
             selected_cues: _,
         } => format!(
-            "cursor: {:?},\nautomatic scroll: {:?}\nactive cues: {:?} mode: {:?}",
-            cursor, automatic_scroll_offset, active_cues, mode,
+            "cursor: {:?},\nautomatic scroll: {:?}\nactive cues: {:?} mode: {:?}\nmodal: {:?}",
+            cursor, automatic_scroll_offset, active_cues, mode, modal,
         ),
     };
 

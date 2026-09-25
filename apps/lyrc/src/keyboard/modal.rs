@@ -8,10 +8,7 @@ use lyrc_core::{
     renderer::Renderer,
     state::SubtitleVariant,
 };
-use subtitles::{
-    language::Language,
-    subtitles::SyncLevel,
-};
+use subtitles::{language::Language, subtitles::SyncLevel};
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
@@ -124,4 +121,3 @@ fn parse_variant(input: &str) -> Option<SubtitleVariant> {
             .map(|language| SubtitleVariant::Translated(language))
     }
 }
-

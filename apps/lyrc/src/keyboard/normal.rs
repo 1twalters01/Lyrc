@@ -3,6 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lyrc_core::{
     app::App,
     history::{CueTimeChange, Edit},
+    modal::Modal,
     renderer::Renderer,
     state::{SubtitleDocumentState, SubtitleVariant},
 };
@@ -671,7 +672,15 @@ pub async fn handle_key<R: Renderer>(
 
         // Translate lyrics
         // Only to French for now
-        KeyCode::Char('t') => app.start_translation(Language::French).await?,
+        // KeyCode::Char('t') => app.start_translation(Language::French).await?,
+        KeyCode::Char('t') => {
+            app.state.modal = Some(Modal::Translate {
+                input: String::new(),
+                input_variant: None,
+                new_variant: None,
+                error: None,
+            })
+        }
 
         // download lyrics
         KeyCode::Char('d') => {

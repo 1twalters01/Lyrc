@@ -49,7 +49,7 @@ impl Synchronizer for CueSynchronizer {
             (_, _) => return None,
         };
 
-        let is_seeking_backwards = self.last_position.is_some_and(|last| position < &last);
+        let is_seeking_backwards = self.last_position.is_some_and(|last| position <= &last);
 
         let mut new_cues = Self::get_cues_at(&subtitle_document, Some(position));
         new_cues = if new_cues.is_empty() && !is_seeking_backwards {
@@ -57,6 +57,8 @@ impl Synchronizer for CueSynchronizer {
         } else {
             new_cues
         };
+
+        self.last_position = Some(position.clone());
 
         if new_cues != self.active_cues {
             let old_cues = std::mem::replace(&mut self.active_cues, new_cues);

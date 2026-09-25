@@ -68,6 +68,8 @@ impl Synchronizer for WordSynchronizer {
             new_words
         };
 
+        self.last_position = Some(position.clone());
+
         if new_words != self.active_words {
             let old_words = std::mem::replace(&mut self.active_words, new_words);
 

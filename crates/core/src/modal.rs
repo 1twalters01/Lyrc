@@ -2,13 +2,13 @@ use subtitles::subtitles::SyncLevel;
 
 use crate::state::SubtitleVariant;
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ModalError {
     InvalidVariant,
     TranslationFailed,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Modal {
     Translate {
         input: String,
