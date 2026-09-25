@@ -44,7 +44,6 @@
     - [x] Insert / delete line / edit text / edit time stamp
     - [x] Undo / redo
     - [x] Preserve alignment when text changes
-    - [ ] Split/merge lines
 - [ ] Mpris
     - [x] Play/Pause/Seek
     - [x] Can select and go to the time of a given lyric
@@ -80,6 +79,7 @@
     [ ] Ollama
         [ ] Fill in options python variable in rust provider file
         [ ] Test
+- [ ] Split/merge lines
 
 
 # V3
