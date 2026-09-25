@@ -12,7 +12,7 @@ use mpris::{
 };
 use subtitles::{language::Language, subtitles::SubtitleDocument};
 
-use crate::{history::EditHistory, mode::AppMode};
+use crate::{history::EditHistory, modal::Modal, mode::AppMode};
 
 #[derive(Clone)]
 pub struct SubtitleDocumentState {
@@ -149,6 +149,7 @@ pub struct AppState {
     pub quit: bool,
     pub automatic_scroll_offset: usize,
     pub app_mode: AppMode,
+    pub modal: Option<Modal>,
     pub alignment_running: bool,
     pub translation_running: bool,
 }
@@ -165,6 +166,7 @@ impl AppState {
             quit: false,
             automatic_scroll_offset: 0,
             app_mode: AppMode::Normal,
+            modal: None,
             alignment_running: false,
             translation_running: false,
         }

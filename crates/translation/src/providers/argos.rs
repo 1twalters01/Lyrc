@@ -137,8 +137,9 @@ impl ArgosTranslator {
             )?;
             into_future_with_locals(locals, coroutine)
         })?;
-        
-        result.await
-        .map_err(|e| TranslationError::PythonError { error: e })
+
+        result
+            .await
+            .map_err(|e| TranslationError::PythonError { error: e })
     }
 }

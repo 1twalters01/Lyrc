@@ -11,7 +11,6 @@ use subtitles::{
     formats::lrc::parser::LrcParser, language::Language, parser::SubtitleParser,
     subtitles::SubtitleCues,
 };
-use translation::{provider::LyricsTranslator, providers::argos::ArgosTranslator};
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,

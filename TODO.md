@@ -3,8 +3,6 @@
 * Have a proper config module
     - [ ] Read from toml/json file 
 
-* Handle event for change in playback speed
-
 * Add download providers
     - [ ] Test Musixmatch
 
@@ -36,7 +34,6 @@
     - [x] Can reload subtitles
     - [ ] Can choose where and how to save subtitles
     - [ ] Save where the file was saved in a db and retrieve based on the track
-- [ ] Handle changing playback speed
 - [ ] Can edit lyrics
     - [x] Can edit lyrics of untimed lines
     - [x] Can edit lyrics of line aligned cues
@@ -79,6 +76,8 @@
     [ ] Ollama
         [ ] Fill in options python variable in rust provider file
         [ ] Test
+* Handle event for change in playback speed
+- [ ] Handle changing playback speed
 - [ ] Split/merge lines
 
 

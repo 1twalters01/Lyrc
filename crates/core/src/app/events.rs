@@ -92,6 +92,8 @@ where
                     self.state
                         .subtitle_documents
                         .set_variant(SubtitleVariant::Translated(language));
+
+                    self.state.modal = None;
                 }
             }
             TranslationResult::Cancelled => {

@@ -9,25 +9,11 @@ pub async fn handle_keyboard_event<R: Renderer>(
     key: KeyEvent,
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mode = &match app.state.app_mode {
-        AppMode::Normal => AppMode::Normal,
-        AppMode::Select {
-            cue_index,
-            ref selected_cues,
-        } => AppMode::Select {
-            cue_index,
-            selected_cues: selected_cues.clone(),
-        },
-        AppMode::Edit {
-            cursor,
-            ref selected_cues,
-        } => AppMode::Edit {
-            cursor,
-            selected_cues: selected_cues.clone(),
-        },
-    };
+    if let Some(modal) = &app.state.modal {
+        return keyboard::modal::handle_key(app, key, modal.clone(), config).await;
+    }
 
-    match mode {
+    match &app.state.app_mode {
         AppMode::Normal => keyboard::normal::handle_key(app, key, &config).await,
         AppMode::Select {
             cue_index,
