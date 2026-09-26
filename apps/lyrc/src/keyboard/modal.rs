@@ -6,9 +6,12 @@ use lyrc_core::{
     app::App,
     modal::{Modal, ModalError},
     renderer::Renderer,
-    state::SubtitleVariant,
+    state::{SubtitleDocumentState, SubtitleVariant},
 };
-use subtitles::{language::Language, subtitles::SyncLevel};
+use subtitles::{
+    language::Language,
+    subtitles::{SubtitleDocument, SyncLevel},
+};
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
@@ -106,7 +109,88 @@ pub async fn handle_key<R: Renderer>(
         Modal::Alignment {
             new_alignment,
             error,
-        } => {}
+        } => match key.code {
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Esc => app.state.modal = None,
+
+            KeyCode::Tab => {
+                app.state.modal = Some(Modal::Translate {
+                    input: String::new(),
+                    input_variant: None,
+                    new_variant: None,
+                    error: None,
+                })
+            }
+
+            KeyCode::Up => {
+                app.state.modal = Some(Modal::Alignment {
+                    new_alignment: new_alignment.next_cyclic(),
+                    error: None,
+                })
+            }
+            KeyCode::Down => {
+                app.state.modal = Some(Modal::Alignment {
+                    new_alignment: new_alignment.previous_cyclic(),
+                    error: None,
+                })
+            }
+
+            KeyCode::Enter => {
+                let mut current_alignment = app
+                    .state
+                    .subtitle_documents
+                    .active()
+                    .map(|state| state.document.sync_level())
+                    .unwrap_or(SyncLevel::None);
+
+                let Some(variant) = app.state.subtitle_documents.active_variant() else {
+                    return Ok(());
+                };
+
+                if let Some(document_state) = app.state.subtitle_documents.active() {
+                    app.state
+                        .subtitle_documents
+                        .insert_cache(variant.clone(), document_state.clone());
+                }
+
+                if new_alignment <= current_alignment {
+                    if let Some(state) = app.state.subtitle_documents.active_mut() {
+                        state.document.downgrade(new_alignment)?;
+                    }
+
+                    app.state.modal = None;
+                    return Ok(());
+                }
+
+                if let Some(cached_document_state) =
+                    app.state.subtitle_documents.get_from_cache(&variant)
+                {
+                    let cached_alignment = cached_document_state.document.sync_level();
+
+                    if cached_alignment > current_alignment {
+                        app.state
+                            .subtitle_documents
+                            .insert(variant.clone(), cached_document_state.clone());
+                        current_alignment = cached_alignment
+                    } 
+
+                    if new_alignment <= current_alignment {
+                        if new_alignment < current_alignment {
+                            if let Some(state) = app.state.subtitle_documents.active_mut() {
+                                state.document.downgrade(new_alignment)?;
+                            }
+                        }
+
+                        app.state.modal = None;
+                        return Ok(());
+                    }
+                }
+
+                app.start_alignment(new_alignment).await?
+            }
+
+            _ => {}
+        },
     }
 
     Ok(())

@@ -20,6 +20,44 @@ pub enum SyncLevel {
     None = 0,
 }
 
+impl SyncLevel {
+    pub fn next(&self) -> Self {
+        match self {
+            Self::Phoneme => Self::Phoneme,
+            Self::Word => Self::Phoneme,
+            Self::Cue => Self::Word,
+            Self::None => Self::Cue,
+        }
+    }
+
+    pub fn next_cyclic(&self) -> Self {
+        match self {
+            Self::Phoneme => Self::None,
+            Self::Word => Self::Phoneme,
+            Self::Cue => Self::Word,
+            Self::None => Self::Cue,
+        }
+    }
+
+    pub fn previous(&self) -> Self {
+        match self {
+            Self::Phoneme => Self::Word,
+            Self::Word => Self::Cue,
+            Self::Cue => Self::None,
+            Self::None => Self::None,
+        }
+    }
+
+    pub fn previous_cyclic(&self) -> Self {
+        match self {
+            Self::Phoneme => Self::Word,
+            Self::Word => Self::Cue,
+            Self::Cue => Self::None,
+            Self::None => Self::Phoneme,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct SubtitleDocument {
     pub metadata: SubtitleMetadata,
@@ -34,6 +72,63 @@ impl SubtitleDocument {
             SubtitleCues::Line(_) => SyncLevel::None,
             SubtitleCues::None => SyncLevel::None,
         }
+    }
+
+    pub fn downgrade(&mut self, level: SyncLevel) -> Result<(), String> {
+        if self.sync_level() < level {
+            return Err(String::from(format!(
+                "Cannot reduce {:?} to {:?}",
+                self.sync_level(),
+                level
+            )));
+        }
+
+        if self.sync_level() == level {
+            return Ok(());
+        }
+
+        self.cues = match (&self.cues, level) {
+            (SubtitleCues::Word(cues), SyncLevel::Cue) => SubtitleCues::Cue(
+                cues.iter()
+                    .map(|cue| Cue {
+                        id: cue.id,
+                        start: cue.start,
+                        end: cue.end,
+                        content: cue
+                            .words
+                            .iter()
+                            .map(|word| word.content.clone())
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    })
+                    .collect(),
+            ),
+            (SubtitleCues::Word(cues), SyncLevel::None) => SubtitleCues::Line(
+                cues.iter()
+                    .map(|cue| Line {
+                        id: cue.id,
+                        content: cue
+                            .words
+                            .iter()
+                            .map(|word| word.content.clone())
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    })
+                    .collect(),
+            ),
+
+            (SubtitleCues::Cue(cues), SyncLevel::None) => SubtitleCues::Line(
+                cues.iter()
+                    .map(|cue| Line {
+                        id: cue.id,
+                        content: cue.content.clone(),
+                    })
+                    .collect(),
+            ),
+            _ => return Err(String::from(format!("Error"))),
+        };
+
+        Ok(())
     }
 
     pub fn from_pathbuf(path: PathBuf) -> Result<SubtitleDocument, Box<dyn std::error::Error>> {
@@ -95,30 +190,9 @@ impl SubtitleDocument {
             }
             SyncLevel::None => Err(String::from("Invalid file").into()),
         }
-        // match &subtitle_document.metadata.file_path {
-        //     Some(file_path) => match file_path.extension() {
-        //         Some(os_str) => match os_str.to_str() {
-        //             Some("elrc") => {
-        //                 let writer = ElrcWriter;
-        //                 let file = writer.write(&subtitle_document.clone())?;
-        //                 Ok(file)
-        //             }
-        //             Some("lrc") => {
-        //                 let writer = LrcWriter;
-        //                 let file = writer.write(&subtitle_document.clone())?;
-        //                 Ok(file)
-        //             }
-        //             Some(_) => Err(String::from("unknown file type").into()),
-        //             None => Err(String::from("os str cannot be turned into a
-        // &str").into()),         },
-        //         None => Err(String::from("File does not have an
-        // extension").into()),     },
-        //     None => Err(String::from("File path does not exist").into()),
-        // }
     }
 
     pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
-        println!("file path: {:?}", &self.metadata.file_path);
         match &self.metadata.file_path {
             Some(file_path) => {
                 let file = SubtitleDocument::write(self)?;

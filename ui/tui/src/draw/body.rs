@@ -39,7 +39,7 @@ pub fn draw_body(
                     );
 
                     let mut line = Line::from(Span::raw(format!(
-                        "[{} - {}]  ",
+                        "[{} - {}] ",
                         start_timestamp, end_timestamp
                     )));
 

@@ -9,8 +9,10 @@ use lyrc_core::{
 };
 use lyrics::{models::LyricsFormat, service::LyricsService};
 use subtitles::{
-    formats::lrc::parser::LrcParser, language::Language, parser::SubtitleParser,
-    subtitles::SubtitleCues,
+    formats::lrc::parser::LrcParser,
+    language::Language,
+    parser::SubtitleParser,
+    subtitles::{SubtitleCues, SyncLevel},
 };
 
 pub async fn handle_key<R: Renderer>(
@@ -668,7 +670,18 @@ pub async fn handle_key<R: Renderer>(
         }
 
         // align lyrics
-        KeyCode::Char('a') => app.start_alignment().await?,
+        // KeyCode::Char('a') => app.start_alignment().await?,
+        KeyCode::Char('a') => {
+            app.state.modal = Some(Modal::Alignment {
+                new_alignment: app
+                    .state
+                    .subtitle_documents
+                    .active()
+                    .map(|state| state.document.sync_level())
+                    .unwrap_or(SyncLevel::None),
+                error: None,
+            })
+        }
 
         // Translate lyrics
         // Only to French for now

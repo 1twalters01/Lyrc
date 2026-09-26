@@ -8,8 +8,6 @@
 
 * Have defined requirements
 
-* Allow choosing the language to translate a file to
-
 * Add error types to python libraries instead of just raising an error
 
 * Improve UI/UX/Design
@@ -17,6 +15,7 @@
     * Signify that you are editing a cue (maybe add a cursor?)
 
 ## Release Criteria
+- [ ] Write requirements and fully go through them
 - [x] Reliably detects the current track
 - [ ] Can download lyrics of current track
     - [x] From LrcLib
@@ -24,10 +23,11 @@
 - [x] Can force-align lyrics
     - [x] Cue level to Word level alignment
     - [x] No alignment to Cue level alignment ---> This is currently scuffed
-- [ ] Can Translate lyrics 
+    - [x] Can choose the alignment to switch to whilst in the app
+- [x] Can Translate lyrics 
     - [x] Can use Argos translator to translate lyrics
     - [x] Can switch the displayed lyrics language
-    - [ ] Can choose the language to switch to whilst in the app
+    - [x] Can choose the language to switch to whilst in the app
 - [x] Can automatically read the best aligned file type for a track (elrc, lrc, txt)
 - [ ] Can save and reload lyrics correctly
     - [x] Can save subtitles
@@ -47,7 +47,7 @@
     - [ ] Can select and go to the time of a given word if word aligned
 - [ ] Can handle empty lines (e.g. new lines)
 - [ ] Handles errors gracefully
-    - [x] Handles errors from rust without crashing
+    - [ ] Handles errors from rust without crashing
     - [ ] Handles errors from python without crashing
 - [ ] Good UI/UX
     - [ ] Good Keyboard commands

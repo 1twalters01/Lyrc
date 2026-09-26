@@ -49,6 +49,7 @@ pub enum SubtitleVariant {
 pub struct SubtitleDocuments {
     documents: HashMap<SubtitleVariant, SubtitleDocumentState>,
     active_variant: Option<SubtitleVariant>,
+    cache: HashMap<SubtitleVariant, SubtitleDocumentState>,
 }
 
 impl SubtitleDocuments {
@@ -56,6 +57,7 @@ impl SubtitleDocuments {
         Self {
             documents: HashMap::new(),
             active_variant: None,
+            cache: HashMap::new(),
         }
     }
 
@@ -95,6 +97,10 @@ impl SubtitleDocuments {
         self.documents.get(variant)
     }
 
+    pub fn get_from_cache(&self, variant: &SubtitleVariant) -> Option<&SubtitleDocumentState> {
+        self.cache.get(variant)
+    }
+
     pub fn get_from_variant_mut(
         &mut self,
         variant: SubtitleVariant,
@@ -131,6 +137,21 @@ impl SubtitleDocuments {
         };
 
         self.documents.insert(subtitle_variant, document_state);
+        true
+    }
+
+    pub fn insert_cache(
+        &mut self,
+        subtitle_variant: SubtitleVariant,
+        document_state: SubtitleDocumentState,
+    ) -> bool {
+        if let Some(cache_state) = self.cache.get(&subtitle_variant) {
+            if cache_state.document.sync_level() >= document_state.document.sync_level() {
+                return false;
+            }
+        }
+
+        self.cache.insert(subtitle_variant, document_state);
         true
     }
 }

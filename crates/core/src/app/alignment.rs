@@ -2,6 +2,7 @@ use alignment::{
     error::AlignmentError,
     messages::{AlignmentRequest, AlignmentTask},
 };
+use subtitles::subtitles::SyncLevel;
 
 use crate::{app::App, renderer::Renderer};
 
@@ -9,7 +10,10 @@ impl<R> App<R>
 where
     R: Renderer,
 {
-    pub async fn start_alignment(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start_alignment(
+        &mut self,
+        _new_alignment: SyncLevel,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // also check if it is for the same audio/subtitles?
         // if so then store alignment sub/audio in app state?
         // maybe make a struct for alignment status in state?

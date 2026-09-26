@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use chrono::Duration;
 use pyo3::{prelude::*, types::PyList};
@@ -82,12 +85,34 @@ pub fn generate_translated_metadata(
         languages: subtitle_document.metadata.languages,
         file_path: match subtitle_document.metadata.file_path {
             Some(path) => {
-                let stem = path.file_stem().unwrap().to_string_lossy();
-                let language_code_2 = language.as_code_2();
-                let new_path = PathBuf::from(format!("{stem}.{language_code_2}.lrc"));
+                let new_path = translated_path(&path, &language);
                 Some(new_path)
             }
             None => None,
         },
+    }
+}
+
+fn translated_path(path: &Path, language: &Language) -> PathBuf {
+    let parent = path.parent().unwrap_or_else(|| Path::new(""));
+    let stem = path.file_stem().unwrap().to_string_lossy();
+    let stem = remove_language_suffixes(&stem);
+    let filename = format!("{}.{}.lrc", stem, language.as_code_2());
+    parent.join(filename)
+}
+
+fn remove_language_suffixes(stem: &str) -> &str {
+    let mut stem = stem;
+
+    loop {
+        let Some((base, suffix)) = stem.rsplit_once(".") else {
+            return stem;
+        };
+
+        if Language::from_str(suffix).is_ok() {
+            stem = base;
+        } else {
+            return stem;
+        }
     }
 }
