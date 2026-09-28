@@ -20,8 +20,8 @@ pub async fn handle_keyboard_event<R: Renderer>(
             selected_cues: _,
         } => keyboard::select::handle_key(app, key, *cue_index, &config).await,
         AppMode::Edit {
-            cursor,
-            selected_cues,
-        } => keyboard::edit::handle_key(app, key, *cursor, selected_cues.clone(), &config).await,
+            cursor: _,
+            selected_cues: _,
+        } => keyboard::edit::handle_key(app, key, &config).await,
     }
 }

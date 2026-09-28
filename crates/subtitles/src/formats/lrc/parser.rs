@@ -174,7 +174,7 @@ impl LrcParser {
 
         Ok(LrcLine::Lyric {
             timestamps,
-            text: remaining_line.to_owned(),
+            text: remaining_line.trim_start().to_owned(),
         })
     }
 

@@ -182,6 +182,10 @@ impl ElrcParser {
             timestamps.push(ElrcParser::parse_timestamp(tag)?);
         }
 
+        let remaining_line = remaining_line
+            .strip_prefix(" ")
+            .unwrap_or(remaining_line);
+
         for word in remaining_line.split(" ") {
             let mut remaining_word = word;
             let mut word_timestamps = Vec::new();
