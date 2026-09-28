@@ -172,7 +172,7 @@ pub async fn handle_key<R: Renderer>(
                             .subtitle_documents
                             .insert(variant.clone(), cached_document_state.clone());
                         current_alignment = cached_alignment
-                    } 
+                    }
 
                     if new_alignment <= current_alignment {
                         if new_alignment < current_alignment {

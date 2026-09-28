@@ -14,7 +14,7 @@ pub async fn handle_key<R: Renderer>(
     _config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut document_state = app.state.subtitle_documents.active_mut();
-    let document_state = match &mut document_state {
+    let mut document_state = match &mut document_state {
         Some(document_state) => document_state,
         None => {
             app.switch_to_normal_mode();
@@ -22,12 +22,15 @@ pub async fn handle_key<R: Renderer>(
         }
     };
 
-        let (cursor, selected_cues) = match &mut app.state.app_mode {
-            AppMode::Edit { cursor, selected_cues } => (cursor, selected_cues),
-            _ => {
-                app.switch_to_normal_mode();
-                return Ok(());
-            }
+    let (cursor, selected_cues) = match &mut app.state.app_mode {
+        AppMode::Edit {
+            cursor,
+            selected_cues,
+        } => (cursor, selected_cues),
+        _ => {
+            app.switch_to_normal_mode();
+            return Ok(());
+        }
     };
 
     match key.code {
@@ -37,7 +40,13 @@ pub async fn handle_key<R: Renderer>(
             document_state.document.save()?;
             document_state.unsaved_changes = false;
             app.state.reload_subtitle_documents().await;
-            if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
+            if let (Some(active_variant), Some(state)) = (
+                app.state.subtitle_documents.active_variant(),
+                app.state.subtitle_documents.active(),
+            ) {
+                app.state
+                    .subtitle_documents
+                    .insert_cache_forced(active_variant.clone(), state.clone());
                 app.state.subtitle_documents.set_variant(active_variant);
             }
         }
@@ -50,6 +59,14 @@ pub async fn handle_key<R: Renderer>(
             if document_state.unsaved_changes == true {
                 app.state.reload_subtitle_documents().await;
                 if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
+                    if let Some(state) =
+                        app.state.subtitle_documents.get_from_cache(&active_variant)
+                    {
+                        println!("state: {:?}", state.unsaved_changes);
+                        app.state
+                            .subtitle_documents
+                            .insert_forced(active_variant.clone(), state.clone());
+                    }
                     app.state.subtitle_documents.set_variant(active_variant);
                 }
             } else {
@@ -107,8 +124,6 @@ pub async fn handle_key<R: Renderer>(
                 let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
 
-                document_state.unsaved_changes = false;
-
                 let mut column = 0;
                 let mut insertion = None;
 
@@ -119,12 +134,14 @@ pub async fn handle_key<R: Renderer>(
                         let char_idx = cursor.active_column - column;
 
                         let byte_idx = word
-                        .content.char_indices().nth(char_idx)
+                            .content
+                            .char_indices()
+                            .nth(char_idx)
                             .map(|(idx, _)| idx)
                             .unwrap_or(word.content.len());
-                        
+
                         insertion = Some((word_idx, byte_idx));
-                        break
+                        break;
                     }
 
                     column += word_len;
@@ -136,11 +153,12 @@ pub async fn handle_key<R: Renderer>(
 
                 if let Some((word_idx, byte_idx)) = insertion {
                     current_cue.words[word_idx].content.insert(byte_idx, char);
+                    document_state.unsaved_changes = true;
 
                     cursor.active_column += 1;
                     cursor.target_column = cursor.active_column;
                 }
-                                
+
                 let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
 
                 let edit = Edit::EditCueContent {
@@ -151,18 +169,13 @@ pub async fn handle_key<R: Renderer>(
                     }]),
                 };
                 app.push_to_history(edit);
-            },
+            }
             SubtitleCues::Cue(cues) => {
                 let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 
-                document_state.unsaved_changes = false;
-
                 let char_len = current_cue.content.chars().count();
-                let insert_idx = std::cmp::min(
-                    cursor.active_column,
-                    char_len,
-                );
+                let insert_idx = std::cmp::min(cursor.active_column, char_len);
                 let byte_idx = current_cue
                     .content
                     .char_indices()
@@ -171,6 +184,7 @@ pub async fn handle_key<R: Renderer>(
                     .unwrap_or(current_cue.content.len());
 
                 current_cue.content.insert(byte_idx, char);
+                document_state.unsaved_changes = true;
                 cursor.active_column = insert_idx + 1;
                 cursor.target_column = cursor.active_column;
 
@@ -184,18 +198,13 @@ pub async fn handle_key<R: Renderer>(
                     }]),
                 };
                 app.push_to_history(edit);
-            },
+            }
             SubtitleCues::Line(cues) => {
                 let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
 
-                document_state.unsaved_changes = false;
-
                 let char_len = current_cue.content.chars().count();
-                let insert_idx = std::cmp::min(
-                    cursor.active_column,
-                    char_len,
-                );
+                let insert_idx = std::cmp::min(cursor.active_column, char_len);
                 let byte_idx = current_cue
                     .content
                     .char_indices()
@@ -204,6 +213,7 @@ pub async fn handle_key<R: Renderer>(
                     .unwrap_or(current_cue.content.len());
 
                 current_cue.content.insert(byte_idx, char);
+                document_state.unsaved_changes = true;
                 cursor.active_column = insert_idx + 1;
                 cursor.target_column = cursor.active_column;
 
@@ -217,8 +227,8 @@ pub async fn handle_key<R: Renderer>(
                     }]),
                 };
                 app.push_to_history(edit);
-            },
-            SubtitleCues::None => {},
+            }
+            SubtitleCues::None => {}
         },
         KeyCode::Backspace => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
@@ -228,8 +238,6 @@ pub async fn handle_key<R: Renderer>(
                 if cursor.active_column == 0 || current_cue.words.is_empty() {
                     return Ok(());
                 }
-
-                document_state.unsaved_changes = false;
 
                 let mut column = 0;
                 let mut deletion = None;
@@ -261,21 +269,22 @@ pub async fn handle_key<R: Renderer>(
 
                 if let Some((word_idx, delete_idx)) = deletion {
                     current_cue.words[word_idx].content.remove(delete_idx);
+                    document_state.unsaved_changes = true;
 
                     cursor.active_column = cursor.active_column.saturating_sub(1);
                     cursor.target_column = cursor.active_column;
+
+                    let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
+
+                    let edit = Edit::EditCueContent {
+                        changes: Vec::from([CueContentChange {
+                            index: cursor.cue_index,
+                            old_content,
+                            new_content,
+                        }]),
+                    };
+                    app.push_to_history(edit);
                 }
-
-                let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
-
-                let edit = Edit::EditCueContent {
-                    changes: Vec::from([CueContentChange {
-                        index: cursor.cue_index,
-                        old_content,
-                        new_content,
-                    }]),
-                };
-                app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
                 let current_cue = &mut cues[cursor.cue_index];
@@ -288,26 +297,25 @@ pub async fn handle_key<R: Renderer>(
                     return Ok(());
                 }
 
-                document_state.unsaved_changes = false;
-
                 let char_index = cursor.active_column.saturating_sub(1);
                 if let Some((byte_index, _)) = current_cue.content.char_indices().nth(char_index) {
                     current_cue.content.remove(byte_index);
+                    document_state.unsaved_changes = true;
 
                     cursor.active_column = cursor.active_column.saturating_sub(1);
                     cursor.target_column = cursor.active_column;
+
+                    let new_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
+
+                    let edit = Edit::EditCueContent {
+                        changes: Vec::from([CueContentChange {
+                            index: cursor.cue_index,
+                            old_content,
+                            new_content,
+                        }]),
+                    };
+                    app.push_to_history(edit);
                 }
-
-                let new_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
-
-                let edit = Edit::EditCueContent {
-                    changes: Vec::from([CueContentChange {
-                        index: cursor.cue_index,
-                        old_content,
-                        new_content,
-                    }]),
-                };
-                app.push_to_history(edit);
             }
             SubtitleCues::Line(cues) => {
                 let current_cue = &mut cues[cursor.cue_index];
@@ -320,26 +328,136 @@ pub async fn handle_key<R: Renderer>(
                     return Ok(());
                 }
 
-                document_state.unsaved_changes = false;
-
                 let char_index = cursor.active_column.saturating_sub(1);
                 if let Some((byte_index, _)) = current_cue.content.char_indices().nth(char_index) {
                     current_cue.content.remove(byte_index);
+                    document_state.unsaved_changes = true;
 
                     cursor.active_column = cursor.active_column.saturating_sub(1);
                     cursor.target_column = cursor.active_column;
+
+                    let new_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
+
+                    let edit = Edit::EditCueContent {
+                        changes: Vec::from([CueContentChange {
+                            index: cursor.cue_index,
+                            old_content,
+                            new_content,
+                        }]),
+                    };
+                    app.push_to_history(edit);
+                }
+            }
+            SubtitleCues::None => {}
+        },
+        KeyCode::Delete => match &mut document_state.document.cues {
+            SubtitleCues::Word(cues) => {
+                let current_cue = &mut cues[cursor.cue_index];
+                let old_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
+
+                if current_cue.words.is_empty() {
+                    return Ok(());
                 }
 
-                let new_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
+                let mut column = 0;
+                let mut deletion = None;
+                let delete_column = cursor.active_column;
 
-                let edit = Edit::EditCueContent {
-                    changes: Vec::from([CueContentChange {
-                        index: cursor.cue_index,
-                        old_content,
-                        new_content,
-                    }]),
-                };
-                app.push_to_history(edit);
+                for (word_idx, word) in current_cue.words.iter().enumerate() {
+                    let word_len = word.content.chars().count();
+
+                    if delete_column < column + word_len {
+                        let delete_idx = delete_column - column;
+                        if let Some((byte_idx, _)) = word.content.char_indices().nth(delete_idx) {
+                            deletion = Some((word_idx, byte_idx));
+                        }
+
+                        break;
+                    }
+
+                    column += word_len;
+
+                    if word_idx + 1 < current_cue.words.len() {
+                        if delete_column == column {
+                            deletion = Some((word_idx, word_len));
+                            break;
+                        }
+
+                        column += 1;
+                    }
+                }
+
+                if let Some((word_idx, delete_idx)) = deletion {
+                    current_cue.words[word_idx].content.remove(delete_idx);
+                    document_state.unsaved_changes = true;
+
+                    let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
+
+                    let edit = Edit::EditCueContent {
+                        changes: Vec::from([CueContentChange {
+                            index: cursor.cue_index,
+                            old_content,
+                            new_content,
+                        }]),
+                    };
+                    app.push_to_history(edit);
+                }
+            }
+            SubtitleCues::Cue(cues) => {
+                let current_cue = &mut cues[cursor.cue_index];
+                let old_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
+
+                let char_len = current_cue.content.chars().count();
+                cursor.active_column = cursor.active_column.min(char_len);
+
+                if cursor.active_column == char_len || current_cue.content.is_empty() {
+                    return Ok(());
+                }
+
+                let char_index = cursor.active_column;
+                if let Some((byte_index, _)) = current_cue.content.char_indices().nth(char_index) {
+                    current_cue.content.remove(byte_index);
+                    document_state.unsaved_changes = true;
+
+                    let new_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
+
+                    let edit = Edit::EditCueContent {
+                        changes: Vec::from([CueContentChange {
+                            index: cursor.cue_index,
+                            old_content,
+                            new_content,
+                        }]),
+                    };
+                    app.push_to_history(edit);
+                }
+            }
+            SubtitleCues::Line(cues) => {
+                let current_cue = &mut cues[cursor.cue_index];
+                let old_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
+
+                let char_len = current_cue.content.chars().count();
+                cursor.active_column = cursor.active_column.min(char_len);
+
+                if cursor.active_column == char_len || current_cue.content.is_empty() {
+                    return Ok(());
+                }
+
+                let char_index = cursor.active_column;
+                if let Some((byte_index, _)) = current_cue.content.char_indices().nth(char_index) {
+                    current_cue.content.remove(byte_index);
+                    document_state.unsaved_changes = true;
+
+                    let new_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
+
+                    let edit = Edit::EditCueContent {
+                        changes: Vec::from([CueContentChange {
+                            index: cursor.cue_index,
+                            old_content,
+                            new_content,
+                        }]),
+                    };
+                    app.push_to_history(edit);
+                }
             }
             SubtitleCues::None => {}
         },

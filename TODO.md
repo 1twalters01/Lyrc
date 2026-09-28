@@ -37,7 +37,10 @@
 - [ ] Can edit lyrics
     - [x] Can edit lyrics of untimed lines
     - [x] Can edit lyrics of line aligned cues
-    - [ ] Can edit lyrics of word aligned cues
+    - [x] Can edit lyrics of word aligned cues
+    - [ ] Adding a space creates a new word in word aligned cues
+    - [ ] Backspace on first letter of non-first word fuses the words together
+    - [ ] Delete on last letter of non-last word fuses the words together
     - [x] Insert / delete line / edit text / edit time stamp
     - [x] Undo / redo
     - [x] Preserve alignment when text changes

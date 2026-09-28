@@ -140,6 +140,14 @@ impl SubtitleDocuments {
         true
     }
 
+    pub fn insert_forced(
+        &mut self,
+        subtitle_variant: SubtitleVariant,
+        document_state: SubtitleDocumentState,
+    ) {
+        self.documents.insert(subtitle_variant, document_state);
+    }
+
     pub fn insert_cache(
         &mut self,
         subtitle_variant: SubtitleVariant,
@@ -153,6 +161,14 @@ impl SubtitleDocuments {
 
         self.cache.insert(subtitle_variant, document_state);
         true
+    }
+
+    pub fn insert_cache_forced(
+        &mut self,
+        subtitle_variant: SubtitleVariant,
+        document_state: SubtitleDocumentState,
+    ) {
+        self.cache.insert(subtitle_variant, document_state);
     }
 }
 

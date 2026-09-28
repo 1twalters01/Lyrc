@@ -48,6 +48,14 @@ pub async fn handle_key<R: Renderer>(
             if document_state.unsaved_changes == true {
                 app.state.reload_subtitle_documents().await;
                 if let Some(active_variant) = app.state.subtitle_documents.active_variant() {
+                    if let Some(state) =
+                        app.state.subtitle_documents.get_from_cache(&active_variant)
+                    {
+                        println!("state: {:?}", state.unsaved_changes);
+                        app.state
+                            .subtitle_documents
+                            .insert_forced(active_variant.clone(), state.clone());
+                    }
                     app.state.subtitle_documents.set_variant(active_variant);
                 }
             } else {
