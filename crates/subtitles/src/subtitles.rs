@@ -287,8 +287,8 @@ impl SubtitleCues {
     pub fn cue_len(&self, index: usize) -> usize {
         match self {
             Self::Word(words) => words[index].cue_len(),
-            Self::Cue(cues) => cues[index].content.len(),
-            Self::Line(lines) => lines[index].content.len(),
+            Self::Cue(cues) => cues[index].content.chars().count(),
+            Self::Line(lines) => lines[index].content.chars().count(),
             Self::None => 0,
         }
     }
@@ -353,7 +353,8 @@ impl AlignedCue {
             .map(|word| word.content.clone())
             .collect::<Vec<String>>()
             .join(" ")
-            .len()
+            .chars()
+            .count()
     }
 }
 

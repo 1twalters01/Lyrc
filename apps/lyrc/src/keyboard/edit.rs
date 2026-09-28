@@ -113,10 +113,17 @@ pub async fn handle_key<R: Renderer>(
                 let mut insertion = None;
 
                 for (word_idx, word) in current_cue.words.iter().enumerate() {
-                    let word_len = word.content.len();
+                    let word_len = word.content.chars().count();
 
                     if cursor.active_column <= column + word_len {
-                        insertion = Some((word_idx, cursor.active_column - column));
+                        let char_idx = cursor.active_column - column;
+
+                        let byte_idx = word
+                        .content.char_indices().nth(char_idx)
+                            .map(|(idx, _)| idx)
+                            .unwrap_or(word.content.len());
+                        
+                        insertion = Some((word_idx, byte_idx));
                         break
                     }
 
@@ -127,8 +134,8 @@ pub async fn handle_key<R: Renderer>(
                     }
                 }
 
-                if let Some((word_idx, insert_idx)) = insertion {
-                    current_cue.words[word_idx].content.insert(insert_idx, char);
+                if let Some((word_idx, byte_idx)) = insertion {
+                    current_cue.words[word_idx].content.insert(byte_idx, char);
 
                     cursor.active_column += 1;
                     cursor.target_column = cursor.active_column;
@@ -151,14 +158,22 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = false;
 
+                let char_len = current_cue.content.chars().count();
                 let insert_idx = std::cmp::min(
                     cursor.active_column,
-                    current_cue.content.len(),
+                    char_len,
                 );
-                current_cue.content.insert(insert_idx, char);
-                cursor.active_column += 1;
+                let byte_idx = current_cue
+                    .content
+                    .char_indices()
+                    .nth(insert_idx)
+                    .map(|(idx, _)| idx)
+                    .unwrap_or(current_cue.content.len());
+
+                current_cue.content.insert(byte_idx, char);
+                cursor.active_column = insert_idx + 1;
                 cursor.target_column = cursor.active_column;
-                
+
                 let new_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 
                 let edit = Edit::EditCueContent {
@@ -176,12 +191,20 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = false;
 
+                let char_len = current_cue.content.chars().count();
                 let insert_idx = std::cmp::min(
                     cursor.active_column,
-                    current_cue.content.len(),
+                    char_len,
                 );
-                current_cue.content.insert(insert_idx, char);
-                cursor.active_column += 1;
+                let byte_idx = current_cue
+                    .content
+                    .char_indices()
+                    .nth(insert_idx)
+                    .map(|(idx, _)| idx)
+                    .unwrap_or(current_cue.content.len());
+
+                current_cue.content.insert(byte_idx, char);
+                cursor.active_column = insert_idx + 1;
                 cursor.target_column = cursor.active_column;
 
                 let new_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
@@ -213,22 +236,21 @@ pub async fn handle_key<R: Renderer>(
                 let delete_column = cursor.active_column.saturating_sub(1);
 
                 for (word_idx, word) in current_cue.words.iter().enumerate() {
-                    let word_len = word.content.len();
+                    let word_len = word.content.chars().count();
 
                     if delete_column < column + word_len {
                         let delete_idx = delete_column - column;
-                        deletion = Some((word_idx, delete_idx));
+                        if let Some((byte_idx, _)) = word.content.char_indices().nth(delete_idx) {
+                            deletion = Some((word_idx, byte_idx));
+                        }
+
                         break;
                     }
 
                     column += word_len;
 
                     if word_idx + 1 < current_cue.words.len() {
-                        // delete_column is on the space between this word and the next
                         if delete_column == column {
-                            // Decide what backspace should do here.
-                            //
-                            // For example, merge the next word into this word.
                             deletion = Some((word_idx, word_len));
                             break;
                         }
@@ -259,7 +281,8 @@ pub async fn handle_key<R: Renderer>(
                 let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 
-                cursor.active_column = cursor.active_column.min(current_cue.content.len());
+                let char_len = current_cue.content.chars().count();
+                cursor.active_column = cursor.active_column.min(char_len);
 
                 if cursor.active_column == 0 || current_cue.content.is_empty() {
                     return Ok(());
@@ -267,10 +290,13 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = false;
 
-                let delete_idx = cursor.active_column.saturating_sub(1);
-                current_cue.content.remove(delete_idx);
-                cursor.active_column = cursor.active_column.saturating_sub(1);
-                cursor.target_column = cursor.active_column;
+                let char_index = cursor.active_column.saturating_sub(1);
+                if let Some((byte_index, _)) = current_cue.content.char_indices().nth(char_index) {
+                    current_cue.content.remove(byte_index);
+
+                    cursor.active_column = cursor.active_column.saturating_sub(1);
+                    cursor.target_column = cursor.active_column;
+                }
 
                 let new_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 
@@ -287,7 +313,8 @@ pub async fn handle_key<R: Renderer>(
                 let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
 
-                cursor.active_column = cursor.active_column.min(current_cue.content.len());
+                let char_len = current_cue.content.chars().count();
+                cursor.active_column = cursor.active_column.min(char_len);
 
                 if cursor.active_column == 0 || current_cue.content.is_empty() {
                     return Ok(());
@@ -295,10 +322,13 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = false;
 
-                let delete_idx = cursor.active_column.saturating_sub(1);
-                current_cue.content.remove(delete_idx);
-                cursor.active_column = cursor.active_column.saturating_sub(1);
-                cursor.target_column = cursor.active_column;
+                let char_index = cursor.active_column.saturating_sub(1);
+                if let Some((byte_index, _)) = current_cue.content.char_indices().nth(char_index) {
+                    current_cue.content.remove(byte_index);
+
+                    cursor.active_column = cursor.active_column.saturating_sub(1);
+                    cursor.target_column = cursor.active_column;
+                }
 
                 let new_content = SubtitleCues::Line(Vec::from([current_cue.clone()]));
 
