@@ -48,7 +48,8 @@
     - [x] Play/Pause/Seek
     - [x] Can select and go to the time of a given lyric
     - [ ] Can select and go to the time of a given word if word aligned
-- [ ] Can handle empty lines (e.g. new lines)
+    - [ ] Modal to select a player
+- [x] Can handle empty lines (e.g. new lines)
 - [ ] Handles errors gracefully
     - [ ] Handles errors from rust without crashing
     - [ ] Handles errors from python without crashing
