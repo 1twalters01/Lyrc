@@ -14,7 +14,7 @@ pub async fn handle_key<R: Renderer>(
     _config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut document_state = app.state.subtitle_documents.active_mut();
-    let mut document_state = match &mut document_state {
+    let document_state = match &mut document_state {
         Some(document_state) => document_state,
         None => {
             app.switch_to_normal_mode();
@@ -62,7 +62,6 @@ pub async fn handle_key<R: Renderer>(
                     if let Some(state) =
                         app.state.subtitle_documents.get_from_cache(&active_variant)
                     {
-                        println!("state: {:?}", state.unsaved_changes);
                         app.state
                             .subtitle_documents
                             .insert_forced(active_variant.clone(), state.clone());
@@ -240,16 +239,68 @@ pub async fn handle_key<R: Renderer>(
                 }
 
                 let mut column = 0;
-                let mut deletion = None;
-                let delete_column = cursor.active_column.saturating_sub(1);
+                let delete_column = cursor.active_column - 1;
 
-                for (word_idx, word) in current_cue.words.iter().enumerate() {
-                    let word_len = word.content.chars().count();
+                for word_idx in 0..current_cue.words.len() {
+                    let word_len = current_cue.words[word_idx].content.chars().count();
 
+                    // Backspace at the first character of a word to merge them
+                    if delete_column == column && word_idx > 0 {
+                        let current_content = current_cue.words[word_idx].content.clone();
+
+                        current_cue.words[word_idx - 1]
+                            .content
+                            .push_str(&current_content);
+
+                        current_cue.words.remove(word_idx);
+
+                        document_state.unsaved_changes = true;
+
+                        cursor.active_column = column - 1;
+                        cursor.target_column = cursor.active_column;
+
+                        let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
+
+                        let edit = Edit::EditCueContent {
+                            changes: Vec::from([CueContentChange {
+                                index: cursor.cue_index,
+                                old_content,
+                                new_content,
+                            }]),
+                        };
+
+                        app.push_to_history(edit);
+
+                        break;
+                    }
+
+                    // Normal character deletion.
                     if delete_column < column + word_len {
-                        let delete_idx = delete_column - column;
-                        if let Some((byte_idx, _)) = word.content.char_indices().nth(delete_idx) {
-                            deletion = Some((word_idx, byte_idx));
+                        let char_idx = delete_column - column;
+
+                        if let Some((byte_idx, _)) = current_cue.words[word_idx]
+                            .content
+                            .char_indices()
+                            .nth(char_idx)
+                        {
+                            current_cue.words[word_idx].content.remove(byte_idx);
+
+                            document_state.unsaved_changes = true;
+
+                            cursor.active_column -= 1;
+                            cursor.target_column = cursor.active_column;
+
+                            let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
+
+                            let edit = Edit::EditCueContent {
+                                changes: Vec::from([CueContentChange {
+                                    index: cursor.cue_index,
+                                    old_content,
+                                    new_content,
+                                }]),
+                            };
+
+                            app.push_to_history(edit);
                         }
 
                         break;
@@ -257,33 +308,10 @@ pub async fn handle_key<R: Renderer>(
 
                     column += word_len;
 
+                    // Account for the space between words.
                     if word_idx + 1 < current_cue.words.len() {
-                        if delete_column == column {
-                            deletion = Some((word_idx, word_len));
-                            break;
-                        }
-
                         column += 1;
                     }
-                }
-
-                if let Some((word_idx, delete_idx)) = deletion {
-                    current_cue.words[word_idx].content.remove(delete_idx);
-                    document_state.unsaved_changes = true;
-
-                    cursor.active_column = cursor.active_column.saturating_sub(1);
-                    cursor.target_column = cursor.active_column;
-
-                    let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
-
-                    let edit = Edit::EditCueContent {
-                        changes: Vec::from([CueContentChange {
-                            index: cursor.cue_index,
-                            old_content,
-                            new_content,
-                        }]),
-                    };
-                    app.push_to_history(edit);
                 }
             }
             SubtitleCues::Cue(cues) => {
@@ -360,16 +388,64 @@ pub async fn handle_key<R: Renderer>(
                 }
 
                 let mut column = 0;
-                let mut deletion = None;
                 let delete_column = cursor.active_column;
 
-                for (word_idx, word) in current_cue.words.iter().enumerate() {
-                    let word_len = word.content.chars().count();
+                for word_idx in 0..current_cue.words.len() {
+                    let word_len = current_cue.words[word_idx].content.chars().count();
 
+                    // Delete at the last character of a word to merge them
+                    if delete_column == column + word_len
+                    && word_idx + 1 < current_cue.words.len()
+                    {
+                        let next_content = current_cue.words[word_idx + 1].content.clone();
+
+                        current_cue.words[word_idx]
+                            .content
+                            .push_str(&next_content);
+
+                        current_cue.words.remove(word_idx + 1);
+
+                        document_state.unsaved_changes = true;
+
+                        let new_content =
+                        SubtitleCues::Word(Vec::from([current_cue.clone()]));
+
+                        let edit = Edit::EditCueContent {
+                            changes: Vec::from([CueContentChange {
+                                index: cursor.cue_index,
+                                old_content,
+                                new_content,
+                            }]),
+                        };
+
+                        app.push_to_history(edit);
+
+                        break;
+                    }
+
+                    // Normal character deletion.
                     if delete_column < column + word_len {
-                        let delete_idx = delete_column - column;
-                        if let Some((byte_idx, _)) = word.content.char_indices().nth(delete_idx) {
-                            deletion = Some((word_idx, byte_idx));
+                        let char_idx = delete_column - column;
+
+                        if let Some((byte_idx, _)) =
+                        current_cue.words[word_idx].content.char_indices().nth(char_idx)
+                        {
+                            current_cue.words[word_idx].content.remove(byte_idx);
+
+                            document_state.unsaved_changes = true;
+
+                            let new_content =
+                            SubtitleCues::Word(Vec::from([current_cue.clone()]));
+
+                            let edit = Edit::EditCueContent {
+                                changes: Vec::from([CueContentChange {
+                                    index: cursor.cue_index,
+                                    old_content,
+                                    new_content,
+                                }]),
+                            };
+
+                            app.push_to_history(edit);
                         }
 
                         break;
@@ -377,33 +453,13 @@ pub async fn handle_key<R: Renderer>(
 
                     column += word_len;
 
+                    // Account for the space between words.
                     if word_idx + 1 < current_cue.words.len() {
-                        if delete_column == column {
-                            deletion = Some((word_idx, word_len));
-                            break;
-                        }
-
                         column += 1;
                     }
                 }
-
-                if let Some((word_idx, delete_idx)) = deletion {
-                    current_cue.words[word_idx].content.remove(delete_idx);
-                    document_state.unsaved_changes = true;
-
-                    let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
-
-                    let edit = Edit::EditCueContent {
-                        changes: Vec::from([CueContentChange {
-                            index: cursor.cue_index,
-                            old_content,
-                            new_content,
-                        }]),
-                    };
-                    app.push_to_history(edit);
-                }
             }
-            SubtitleCues::Cue(cues) => {
+           SubtitleCues::Cue(cues) => {
                 let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 

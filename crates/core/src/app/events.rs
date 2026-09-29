@@ -51,6 +51,17 @@ where
                         }
                     }
 
+                    let cache_check = self
+                        .state
+                        .subtitle_documents
+                        .get_from_cache(&SubtitleVariant::Original);
+                    if cache_check.is_none() {
+                        self.state.subtitle_documents.insert_cache(
+                            SubtitleVariant::Original,
+                            SubtitleDocumentState::new(subtitle_document),
+                        );
+                    }
+
                     self.state
                         .subtitle_documents
                         .set_variant(SubtitleVariant::Original);
