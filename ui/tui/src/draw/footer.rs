@@ -13,7 +13,7 @@ pub fn draw_footer<A: Debug>(
     let mode = state.app_mode.to_string();
     let modal = state.modal.clone();
 
-    let text = match state.app_mode {
+    let mut text = match state.app_mode {
         AppMode::Normal => format!(
             "automatic scroll: {:?}, active cues: {:?}\nmode: {:?}\nmodal: {:?}",
             automatic_scroll_offset, active_cues, mode, modal,
@@ -33,6 +33,23 @@ pub fn draw_footer<A: Debug>(
             cursor, automatic_scroll_offset, active_cues, mode, modal,
         ),
     };
+
+    let words = match state.subtitle_documents.active() {
+        Some(state) => match &state.document.cues {
+            subtitles::subtitles::SubtitleCues::Word(words) => Some(words[0].clone()),
+            _ => None,
+        },
+        None => None,
+    };
+    text.push_str(&format!(
+        "\nword length: {:?}, words: {:?}",
+        words.clone().map(|words| words.words.len()),
+        words.map(|words| words
+            .words
+            .iter()
+            .map(|word| word.content.clone())
+            .collect::<Vec<_>>()),
+    ));
 
     frame.render_widget(Paragraph::new(text), area);
 }

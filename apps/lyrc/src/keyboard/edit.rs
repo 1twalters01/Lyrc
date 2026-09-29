@@ -6,7 +6,7 @@ use lyrc_core::{
     mode::AppMode,
     renderer::Renderer,
 };
-use subtitles::subtitles::SubtitleCues;
+use subtitles::subtitles::{SubtitleCues, Word};
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
@@ -124,38 +124,64 @@ pub async fn handle_key<R: Renderer>(
                 let old_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
 
                 let mut column = 0;
-                let mut insertion = None;
 
-                for (word_idx, word) in current_cue.words.iter().enumerate() {
-                    let word_len = word.content.chars().count();
-
-                    if cursor.active_column <= column + word_len {
-                        let char_idx = cursor.active_column - column;
-
-                        let byte_idx = word
-                            .content
-                            .char_indices()
-                            .nth(char_idx)
-                            .map(|(idx, _)| idx)
-                            .unwrap_or(word.content.len());
-
-                        insertion = Some((word_idx, byte_idx));
-                        break;
+                if current_cue.words.is_empty() {
+                    if char == ' ' {
+                        current_cue.words.push(Word {
+                            content: String::new(),
+                            start: current_cue.start,
+                            end: current_cue.end,
+                        })
+                    } else {
+                        current_cue.words.push(Word {
+                            content: char.to_string(),
+                            start: current_cue.start,
+                            end: current_cue.end,
+                        })
                     }
 
-                    column += word_len;
-
-                    if word_idx + 1 < current_cue.words.len() {
-                        column += 1;
-                    }
-                }
-
-                if let Some((word_idx, byte_idx)) = insertion {
-                    current_cue.words[word_idx].content.insert(byte_idx, char);
                     document_state.unsaved_changes = true;
 
-                    cursor.active_column += 1;
+                    cursor.active_column = 1;
                     cursor.target_column = cursor.active_column;
+                } else {
+                    let current_cue_word_count = current_cue.words.len();
+                    for (word_idx, word) in current_cue.words.iter_mut().enumerate() {
+                        let word_len = word.content.chars().count();
+
+                        if cursor.active_column <= column + word_len {
+                            let char_idx = cursor.active_column - column;
+
+                            let byte_idx = word
+                                .content
+                                .char_indices()
+                                .nth(char_idx)
+                                .map(|(idx, _)| idx)
+                                .unwrap_or(word.content.len());
+
+                            if char == ' ' {
+                                let mut new_word = word.clone();
+                                new_word.content = word.content.split_off(byte_idx);
+
+                                current_cue.words.insert(word_idx + 1, new_word);
+                            } else {
+                                current_cue.words[word_idx].content.insert(byte_idx, char);
+                            }
+
+                            document_state.unsaved_changes = true;
+
+                            cursor.active_column += 1;
+                            cursor.target_column = cursor.active_column;
+
+                            break;
+                        }
+
+                        column += word_len;
+
+                        if word_idx + 1 < current_cue_word_count {
+                            column += 1;
+                        }
+                    }
                 }
 
                 let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
@@ -394,21 +420,17 @@ pub async fn handle_key<R: Renderer>(
                     let word_len = current_cue.words[word_idx].content.chars().count();
 
                     // Delete at the last character of a word to merge them
-                    if delete_column == column + word_len
-                    && word_idx + 1 < current_cue.words.len()
+                    if delete_column == column + word_len && word_idx + 1 < current_cue.words.len()
                     {
                         let next_content = current_cue.words[word_idx + 1].content.clone();
 
-                        current_cue.words[word_idx]
-                            .content
-                            .push_str(&next_content);
+                        current_cue.words[word_idx].content.push_str(&next_content);
 
                         current_cue.words.remove(word_idx + 1);
 
                         document_state.unsaved_changes = true;
 
-                        let new_content =
-                        SubtitleCues::Word(Vec::from([current_cue.clone()]));
+                        let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
 
                         let edit = Edit::EditCueContent {
                             changes: Vec::from([CueContentChange {
@@ -427,15 +449,16 @@ pub async fn handle_key<R: Renderer>(
                     if delete_column < column + word_len {
                         let char_idx = delete_column - column;
 
-                        if let Some((byte_idx, _)) =
-                        current_cue.words[word_idx].content.char_indices().nth(char_idx)
+                        if let Some((byte_idx, _)) = current_cue.words[word_idx]
+                            .content
+                            .char_indices()
+                            .nth(char_idx)
                         {
                             current_cue.words[word_idx].content.remove(byte_idx);
 
                             document_state.unsaved_changes = true;
 
-                            let new_content =
-                            SubtitleCues::Word(Vec::from([current_cue.clone()]));
+                            let new_content = SubtitleCues::Word(Vec::from([current_cue.clone()]));
 
                             let edit = Edit::EditCueContent {
                                 changes: Vec::from([CueContentChange {
@@ -459,7 +482,7 @@ pub async fn handle_key<R: Renderer>(
                     }
                 }
             }
-           SubtitleCues::Cue(cues) => {
+            SubtitleCues::Cue(cues) => {
                 let current_cue = &mut cues[cursor.cue_index];
                 let old_content = SubtitleCues::Cue(Vec::from([current_cue.clone()]));
 
