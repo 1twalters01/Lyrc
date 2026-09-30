@@ -15,7 +15,6 @@
     * Signify that you are editing a cue (maybe add a cursor?)
 
 ## Release Criteria
-- [ ] Write requirements and fully go through them
 - [x] Reliably detects the current track
 - [ ] Can download lyrics of current track
     - [x] From LrcLib
@@ -48,11 +47,12 @@
     - [x] Play/Pause/Seek
     - [x] Can select and go to the time of a given lyric
     - [ ] Can select and go to the time of a given word if word aligned
-    - [ ] Modal to select a player
+    - [x] Modal to select a player
 - [x] Can handle empty lines (e.g. new lines)
 - [ ] Handles errors gracefully
     - [ ] Handles errors from rust without crashing
     - [ ] Handles errors from python without crashing
+- [ ] Write requirements and fully go through them
 - [ ] Good UI/UX
     - [ ] Good Keyboard commands
     - [ ] Good Design

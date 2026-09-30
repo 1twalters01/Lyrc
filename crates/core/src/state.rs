@@ -170,6 +170,10 @@ impl SubtitleDocuments {
     ) {
         self.cache.insert(subtitle_variant, document_state);
     }
+
+    pub fn clear_cache(&mut self) {
+        self.cache.clear()
+    }
 }
 
 #[derive(Clone)]
@@ -244,6 +248,7 @@ impl AppState {
 
     pub async fn reload_subtitle_documents(&mut self) {
         self.subtitle_documents.clear();
+        self.subtitle_documents.clear_cache();
 
         let Some(track) = &self.track else { return };
 

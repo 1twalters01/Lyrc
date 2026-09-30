@@ -10,6 +10,11 @@ pub enum ModalError {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Modal {
+    Player {
+        players: Vec<String>,
+        new_player: Option<String>,
+        error: Option<ModalError>,
+    },
     Translate {
         input: String,
         input_variant: Option<SubtitleVariant>,

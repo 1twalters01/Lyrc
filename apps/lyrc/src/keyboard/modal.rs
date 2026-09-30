@@ -6,8 +6,9 @@ use lyrc_core::{
     app::App,
     modal::{Modal, ModalError},
     renderer::Renderer,
-    state::{SubtitleDocumentState, SubtitleVariant},
+    state::{SubtitleDocumentState, SubtitleDocuments, SubtitleVariant},
 };
+use mpris::client::MprisClient;
 use subtitles::{
     language::Language,
     subtitles::{SubtitleDocument, SyncLevel},
@@ -20,6 +21,75 @@ pub async fn handle_key<R: Renderer>(
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match modal {
+        Modal::Player {
+            players,
+            new_player,
+            error,
+        } => match key.code {
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Esc => app.state.modal = None,
+
+            KeyCode::Tab => {
+                if app.state.subtitle_documents.active().is_some() {
+                    app.state.modal = Some(Modal::Translate {
+                        input: String::new(),
+                        input_variant: None,
+                        new_variant: None,
+                        error: None,
+                    })
+                }
+            }
+
+            KeyCode::Char(' ') => {
+                app.state.modal = Some(Modal::Player {
+                    players: MprisClient::find_players().await?,
+                    new_player: None,
+                    error: None,
+                })
+            }
+
+            KeyCode::Up => {
+                let next_player =
+                    if let Some(idx) = players.iter().position(|p| Some(p.clone()) == new_player) {
+                        match players.get(idx + 1) {
+                            Some(player) => Some(player),
+                            None => players.first(),
+                        }
+                    } else {
+                        players.last()
+                    };
+                app.state.modal = Some(Modal::Player {
+                    players: players.clone(),
+                    new_player: next_player.cloned(),
+                    error: None,
+                })
+            }
+            KeyCode::Down => {
+                let next_player =
+                    if let Some(idx) = players.iter().position(|p| Some(p.clone()) == new_player) {
+                        match players.get(idx - 1) {
+                            Some(player) => Some(player),
+                            None => players.last(),
+                        }
+                    } else {
+                        players.first()
+                    };
+                app.state.modal = Some(Modal::Player {
+                    players: players.clone(),
+                    new_player: next_player.cloned(),
+                    error: None,
+                })
+            }
+
+            KeyCode::Enter => {
+                if let Some(player) = new_player {
+                    app.mpris_client = MprisClient::connect(&player).await?;
+                    app.update_track().await;
+                    app.update_subtitle_document().await;
+                }
+            }
+            _ => {}
+        },
         Modal::Translate {
             mut input,
             mut input_variant,
@@ -114,10 +184,15 @@ pub async fn handle_key<R: Renderer>(
             KeyCode::Esc => app.state.modal = None,
 
             KeyCode::Tab => {
-                app.state.modal = Some(Modal::Translate {
-                    input: String::new(),
-                    input_variant: None,
-                    new_variant: None,
+                // app.state.modal = Some(Modal::Translate {
+                //     input: String::new(),
+                //     input_variant: None,
+                //     new_variant: None,
+                //     error: None,
+                // })
+                app.state.modal = Some(Modal::Player {
+                    players: MprisClient::find_players().await?,
+                    new_player: None,
                     error: None,
                 })
             }
