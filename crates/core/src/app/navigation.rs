@@ -1,4 +1,4 @@
-use subtitles::subtitles::SubtitleCues;
+use subtitles::subtitles::{SubtitleCues, SyncLevel};
 
 use crate::{
     app::App,
@@ -53,10 +53,17 @@ where
             None => return,
         };
 
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
                 Some(index) => {
-                    let cursor = SelectCursor { cue_index: index };
+                    let cursor = SelectCursor::new(index, has_words);
                     AppMode::Select {
                         cursor,
                         selected_cues: Vec::new(),
@@ -69,7 +76,16 @@ where
                 selected_cues,
             } => {
                 let mut new_cursor = cursor.clone();
-                new_cursor.move_up();
+                let new_word_count = if cursor.active_word_index.is_none() {
+                    None
+                } else {
+                    subtitle_document_state
+                        .document
+                        .cues
+                        .word_count(new_cursor.cue_index.saturating_sub(1))
+                };
+
+                new_cursor.move_up(new_word_count);
                 AppMode::Select {
                     cursor: new_cursor,
                     selected_cues: selected_cues.clone(),
@@ -102,10 +118,17 @@ where
             return;
         }
 
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
                 Some(index) => AppMode::Select {
-                    cursor: SelectCursor::new(index),
+                    cursor: SelectCursor::new(index, has_words),
                     selected_cues: Vec::new(),
                 },
                 None => AppMode::Normal,
@@ -117,7 +140,19 @@ where
                 Some(subtitle_document_state) => match &subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         let mut new_cursor = cursor.clone();
-                        new_cursor.move_down(cues.len());
+
+                        let mut new_index = cursor.cue_index;
+                        if new_index < cues.len() - 1 {
+                            new_index += 1;
+                        }
+
+                        let new_word_count = if cursor.active_word_index.is_none() {
+                            None
+                        } else {
+                            subtitle_document_state.document.cues.word_count(new_index)
+                        };
+
+                        new_cursor.move_down(new_word_count, cues.len());
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -126,7 +161,16 @@ where
                     }
                     SubtitleCues::Cue(cues) => {
                         let mut new_cursor = cursor.clone();
-                        new_cursor.move_down(cues.len());
+
+                        let mut new_index = cursor.cue_index;
+                        if new_index < cues.len() - 1 {
+                            new_index += 1;
+                        }
+
+                        let new_word_count =
+                            subtitle_document_state.document.cues.word_count(new_index);
+
+                        new_cursor.move_down(new_word_count, cues.len());
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -135,7 +179,15 @@ where
                     }
                     SubtitleCues::Line(cues) => {
                         let mut new_cursor = cursor.clone();
-                        new_cursor.move_down(cues.len());
+
+                        let mut new_index = cursor.cue_index;
+                        if new_index < cues.len() - 1 {
+                            new_index += 1;
+                        }
+
+                        let new_word_count =
+                            subtitle_document_state.document.cues.word_count(new_index);
+                        new_cursor.move_down(new_word_count, cues.len());
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -227,10 +279,17 @@ where
 
         let lines = self.renderer.get_lines_per_page() / 2;
 
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
                 Some(index) => AppMode::Select {
-                    cursor: SelectCursor::new(index),
+                    cursor: SelectCursor::new(index, has_words),
                     selected_cues: Vec::new(),
                 },
                 None => AppMode::Normal,
@@ -240,7 +299,7 @@ where
                 selected_cues,
             } => {
                 let new_cursor_index = cursor.cue_index.saturating_sub(lines);
-                let new_cursor = SelectCursor::new(new_cursor_index);
+                let new_cursor = SelectCursor::new(new_cursor_index, has_words);
 
                 AppMode::Select {
                     cursor: new_cursor,
@@ -270,11 +329,18 @@ where
             self.switch_to_normal_mode();
         }
 
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         let lines = self.renderer.get_lines_per_page() / 2;
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
                 Some(index) => AppMode::Select {
-                    cursor: SelectCursor::new(index),
+                    cursor: SelectCursor::new(index, has_words),
                     selected_cues: Vec::new(),
                 },
                 None => AppMode::Normal,
@@ -292,7 +358,7 @@ where
                             index = cues.len() - 1;
                         }
 
-                        let new_cursor = SelectCursor::new(index);
+                        let new_cursor = SelectCursor::new(index, has_words);
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -307,7 +373,7 @@ where
                             index = cues.len() - 1;
                         }
 
-                        let new_cursor = SelectCursor::new(index);
+                        let new_cursor = SelectCursor::new(index, has_words);
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -322,7 +388,7 @@ where
                             index = cues.len() - 1;
                         }
 
-                        let new_cursor = SelectCursor::new(index);
+                        let new_cursor = SelectCursor::new(index, has_words);
 
                         AppMode::Select {
                             cursor: new_cursor,

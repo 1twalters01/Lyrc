@@ -1,5 +1,5 @@
 use chrono::Duration;
-use subtitles::subtitles::SubtitleCues;
+use subtitles::subtitles::{SubtitleCues, SyncLevel};
 
 use crate::{
     app::App,
@@ -64,6 +64,13 @@ where
     }
 
     pub fn set_current_cue_start_time(&mut self, new_position: Duration) -> Result<(), String> {
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         fn update_cue_index(
             document: &mut subtitles::subtitles::SubtitleDocument,
             cue_index: &mut usize,
@@ -179,7 +186,7 @@ where
                             }
                         }
 
-                        let new_cursor = SelectCursor::new(new_cue_index);
+                        let new_cursor = SelectCursor::new(new_cue_index, has_words);
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -224,6 +231,13 @@ where
     }
 
     pub fn set_current_cue_end_time(&mut self, new_position: Duration) -> Result<(), String> {
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         fn update_cue_index(
             document: &mut subtitles::subtitles::SubtitleDocument,
             cue_index: &mut usize,
@@ -279,12 +293,15 @@ where
                         cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cursor: SelectCursor::new(update_cue_index(
-                            &mut document_state.document,
-                            &mut cursor.cue_index,
-                            new_position,
-                            track,
-                        )),
+                        cursor: SelectCursor::new(
+                            update_cue_index(
+                                &mut document_state.document,
+                                &mut cursor.cue_index,
+                                new_position,
+                                track,
+                            ),
+                            has_words,
+                        ),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -316,6 +333,13 @@ where
         &mut self,
         forwards_cue_increment: Duration,
     ) -> Result<(), String> {
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         fn increase_cue_index(
             document: &mut subtitles::subtitles::SubtitleDocument,
             cue_index: &mut usize,
@@ -411,7 +435,7 @@ where
                             }
                         }
 
-                        let new_cursor = SelectCursor::new(new_cue_index);
+                        let new_cursor = SelectCursor::new(new_cue_index, has_words);
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -461,6 +485,13 @@ where
         &mut self,
         forwards_cue_increment: Duration,
     ) -> Result<(), String> {
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         fn increase_cue_index(
             document: &mut subtitles::subtitles::SubtitleDocument,
             cue_index: &mut usize,
@@ -504,12 +535,15 @@ where
                         cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cursor: SelectCursor::new(increase_cue_index(
-                            &mut document_state.document,
-                            &mut cursor.cue_index,
-                            forwards_cue_increment,
-                            track,
-                        )),
+                        cursor: SelectCursor::new(
+                            increase_cue_index(
+                                &mut document_state.document,
+                                &mut cursor.cue_index,
+                                forwards_cue_increment,
+                                track,
+                            ),
+                            has_words,
+                        ),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -541,6 +575,13 @@ where
         &mut self,
         backwards_cue_increment: Duration,
     ) -> Result<(), String> {
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         fn decrease_cue_index(
             document: &mut subtitles::subtitles::SubtitleDocument,
             cue_index: &mut usize,
@@ -596,11 +637,14 @@ where
                         cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cursor: SelectCursor::new(decrease_cue_index(
-                            &mut document_state.document,
-                            &mut cursor.cue_index,
-                            backwards_cue_increment,
-                        )),
+                        cursor: SelectCursor::new(
+                            decrease_cue_index(
+                                &mut document_state.document,
+                                &mut cursor.cue_index,
+                                backwards_cue_increment,
+                            ),
+                            has_words,
+                        ),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -631,6 +675,13 @@ where
         &mut self,
         backwards_cue_increment: Duration,
     ) -> Result<(), String> {
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         fn decrease_cue_index(
             document: &mut subtitles::subtitles::SubtitleDocument,
             cue_index: &mut usize,
@@ -678,11 +729,14 @@ where
                         cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cursor: SelectCursor::new(decrease_cue_index(
-                            &mut document_state.document,
-                            &mut cursor.cue_index,
-                            backwards_cue_increment,
-                        )),
+                        cursor: SelectCursor::new(
+                            decrease_cue_index(
+                                &mut document_state.document,
+                                &mut cursor.cue_index,
+                                backwards_cue_increment,
+                            ),
+                            has_words,
+                        ),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {

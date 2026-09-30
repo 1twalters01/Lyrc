@@ -293,6 +293,15 @@ impl SubtitleCues {
         }
     }
 
+    pub fn word_count(&self, index: usize) -> Option<usize> {
+        match self {
+            Self::Word(words) => Some(words[index].words.len()),
+            Self::Cue(_) => None,
+            Self::Line(_) => None,
+            Self::None => None,
+        }
+    }
+
     pub fn get_lines(&self) -> Option<Vec<String>> {
         match self {
             SubtitleCues::Word(aligned_cues) => Some(

@@ -43,10 +43,10 @@
     - [x] Insert / delete line / edit text / edit time stamp
     - [x] Undo / redo
     - [x] Preserve alignment when text changes
-- [ ] Mpris
+- [x] Mpris
     - [x] Play/Pause/Seek
     - [x] Can select and go to the time of a given lyric
-    - [ ] Can select and go to the time of a given word if word aligned
+    - [x] Can select and go to the time of a given word if word aligned
     - [x] Modal to select a player
 - [x] Can handle empty lines (e.g. new lines)
 - [ ] Handles errors gracefully

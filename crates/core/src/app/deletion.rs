@@ -23,7 +23,10 @@ where
                             cues.remove(*index);
                             if *index < cursor.cue_index {
                                 // cursor.cue_index = cursor.cue_index.saturating_sub(1);
-                                cursor.move_up();
+                                let new_word_count =
+                                    cues[cursor.cue_index.saturating_sub(1)].words.len();
+
+                                cursor.move_up(Some(new_word_count));
                             }
                         }
                         *selected_cues = Vec::new();
@@ -32,7 +35,8 @@ where
                         for index in selected_cues.iter().rev() {
                             cues.remove(*index);
                             if *index < cursor.cue_index {
-                                cursor.move_up();
+                                let new_word_count = None;
+                                cursor.move_up(new_word_count);
                             }
                         }
                         *selected_cues = Vec::new();
@@ -41,7 +45,8 @@ where
                         for index in selected_cues.iter().rev() {
                             cues.remove(*index);
                             if *index < cursor.cue_index {
-                                cursor.move_up();
+                                let new_word_count = None;
+                                cursor.move_up(new_word_count);
                             }
                         }
                         *selected_cues = Vec::new();

@@ -63,4 +63,35 @@ where
 
         Ok(())
     }
+
+    pub async fn seek_to_selected_word(
+        &mut self,
+        cue_index: usize,
+        word_index: usize,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if self.state.track.is_none() {
+            return Err(String::from("No track was found").into());
+        }
+
+        if let Some(ref document_state) = self.state.subtitle_documents.active() {
+            if document_state.document.sync_level() == SyncLevel::None {
+                return Ok(());
+            }
+
+            let duration = match &document_state.document.cues {
+                SubtitleCues::Word(cues) => cues[cue_index].words[word_index].start,
+                // SubtitleCues::Cue(cues) => cues[cue_index].start,
+                SubtitleCues::Cue(_) => return Err(String::from("No word times").into()),
+                SubtitleCues::Line(_) => return Err(String::from("No subtitle times").into()),
+                SubtitleCues::None => return Err(String::from("No subtitle cues").into()),
+            };
+            self.mpris_client
+                .execute(PlaybackCommand::SetPosition(duration))
+                .await?;
+        } else {
+            return Err(String::from("No subtitle_document was found").into());
+        }
+
+        Ok(())
+    }
 }

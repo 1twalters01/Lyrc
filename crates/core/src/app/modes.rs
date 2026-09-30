@@ -1,4 +1,4 @@
-use subtitles::subtitles::SubtitleCues;
+use subtitles::subtitles::{SubtitleCues, SyncLevel};
 
 use crate::{
     app::App,
@@ -19,6 +19,13 @@ where
             return Err(String::from("No subtitle document found"));
         }
 
+        let has_words = self
+            .state
+            .subtitle_documents
+            .active()
+            .map(|state| state.document.sync_level() >= SyncLevel::Word)
+            .unwrap_or(false);
+
         let (cursor, selected_cues) = match &self.state.app_mode {
             AppMode::Normal => (
                 SelectCursor::new(
@@ -30,6 +37,7 @@ where
                         .collect::<Vec<_>>()
                         .first()
                         .unwrap_or(&0),
+                    has_words,
                 ),
                 Vec::new(),
             ),
@@ -41,7 +49,7 @@ where
                 cursor,
                 selected_cues,
             } => (
-                SelectCursor::new(cursor.cue_index),
+                SelectCursor::new(cursor.cue_index, has_words),
                 selected_cues
                     .iter()
                     .map(|edit_cue| edit_cue.index)

@@ -6,7 +6,7 @@ use lyrc_core::{
     mode::AppMode,
     renderer::Renderer,
 };
-use subtitles::subtitles::SubtitleCues;
+use subtitles::subtitles::{SubtitleCues, SyncLevel};
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
@@ -73,21 +73,56 @@ pub async fn handle_key<R: Renderer>(
             }
         }
         KeyCode::Tab => app.switch_to_edit_mode()?,
-        KeyCode::Enter => app.seek_to_selected_line(cursor.cue_index).await?,
-
-        // Playback control
-        KeyCode::Char(' ') => app.toggle_play_pause().await?,
-        KeyCode::Left => app.seek_by_duration(config.rewind_duration).await?,
-        KeyCode::Right => app.seek_by_duration(config.fast_forward_duration).await?,
+        KeyCode::Enter => match cursor.active_word_index {
+            Some(active_word_index) => {
+                app.seek_to_selected_word(cursor.cue_index, active_word_index)
+                    .await?
+            }
+            None => app.seek_to_selected_line(cursor.cue_index).await?,
+        },
 
         // Line control
         KeyCode::Up if key.modifiers == KeyModifiers::CONTROL => app.go_to_previous_half_page(),
         KeyCode::Down if key.modifiers == KeyModifiers::CONTROL => app.go_to_next_half_page(),
         KeyCode::Up => app.go_to_previous_line(),
         KeyCode::Down => app.go_to_next_line(),
+        KeyCode::Left if key.modifiers == KeyModifiers::CONTROL => match &mut app.state.app_mode {
+            AppMode::Select {
+                cursor,
+                selected_cues: _,
+            } => {
+                if cursor.active_word_index == Some(0) {
+                    cursor.active_word_index = None
+                } else {
+                    cursor.move_left()
+                }
+            }
+            _ => {}
+        },
+        KeyCode::Right if key.modifiers == KeyModifiers::CONTROL => match &mut app.state.app_mode {
+            AppMode::Select {
+                cursor,
+                selected_cues: _,
+            } => {
+                if document_state.document.sync_level() >= SyncLevel::Word
+                    && cursor.active_word_index == None
+                {
+                    cursor.active_word_index = Some(0);
+                } else {
+                    cursor.move_right(document_state.document.cues.word_count(cursor.cue_index))
+                }
+            }
+            _ => {}
+        },
         KeyCode::Char('H') => app.toggle_select_all_lines()?,
         KeyCode::Char('h') => app.toggle_select_line(),
 
+        // Playback control
+        KeyCode::Char(' ') => app.toggle_play_pause().await?,
+        KeyCode::Left => app.seek_by_duration(config.rewind_duration).await?,
+        KeyCode::Right => app.seek_by_duration(config.fast_forward_duration).await?,
+
+        // Edit cues
         KeyCode::Char('D') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
                 let cues = match &app.state.app_mode {
