@@ -84,9 +84,9 @@ pub fn draw_body(
     let (selected_cue, selected_cues) = match &state.app_mode {
         AppMode::Normal => (None, Vec::new()),
         AppMode::Select {
-            cue_index,
+            cursor,
             selected_cues,
-        } => (Some(*cue_index), selected_cues.clone()),
+        } => (Some(cursor.cue_index), selected_cues.clone()),
         AppMode::Edit {
             cursor,
             selected_cues,

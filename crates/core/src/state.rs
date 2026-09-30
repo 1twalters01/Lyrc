@@ -248,7 +248,6 @@ impl AppState {
 
     pub async fn reload_subtitle_documents(&mut self) {
         self.subtitle_documents.clear();
-        self.subtitle_documents.clear_cache();
 
         let Some(track) = &self.track else { return };
 
@@ -320,7 +319,7 @@ impl AppState {
     pub fn is_select_mode(&self) -> bool {
         match self.app_mode {
             AppMode::Select {
-                cue_index: _,
+                cursor: _,
                 selected_cues: _,
             } => true,
             _ => false,

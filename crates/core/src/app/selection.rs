@@ -1,5 +1,4 @@
 use subtitles::subtitles::SubtitleCues;
-use synchronizer::traits::Synchronizer;
 
 use crate::{app::App, mode::AppMode, renderer::Renderer};
 
@@ -16,14 +15,17 @@ where
             Some(_) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => {
-                    if selected_cues.contains(&cue_index) {
-                        let index = selected_cues.iter().position(|c| c == cue_index).unwrap();
+                    if selected_cues.contains(&cursor.cue_index) {
+                        let index = selected_cues
+                            .iter()
+                            .position(|c| c == &cursor.cue_index)
+                            .unwrap();
                         selected_cues.remove(index);
                     } else {
-                        selected_cues.push(*cue_index);
+                        selected_cues.push(cursor.cue_index);
                     }
                 }
                 AppMode::Edit {
@@ -47,7 +49,7 @@ where
             Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {

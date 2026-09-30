@@ -2,7 +2,7 @@ use subtitles::subtitles::SubtitleCues;
 
 use crate::{
     app::App,
-    mode::{AppMode, Cursor, EditCue},
+    mode::{AppMode, EditCue, EditCursor, SelectCursor},
     renderer::Renderer,
 };
 
@@ -19,27 +19,29 @@ where
             return Err(String::from("No subtitle document found"));
         }
 
-        let (cue_index, selected_cues) = match &self.state.app_mode {
+        let (cursor, selected_cues) = match &self.state.app_mode {
             AppMode::Normal => (
-                *self
-                    .synchronizer
-                    .get_active_indices()
-                    .iter()
-                    .map(|i| i.cue_index().cue)
-                    .collect::<Vec<_>>()
-                    .first()
-                    .unwrap_or(&0),
+                SelectCursor::new(
+                    *self
+                        .synchronizer
+                        .get_active_indices()
+                        .iter()
+                        .map(|i| i.cue_index().cue)
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap_or(&0),
+                ),
                 Vec::new(),
             ),
             AppMode::Select {
-                cue_index,
+                cursor,
                 selected_cues,
-            } => (*cue_index, selected_cues.clone()),
+            } => (cursor.clone(), selected_cues.clone()),
             AppMode::Edit {
                 cursor,
                 selected_cues,
             } => (
-                cursor.cue_index,
+                SelectCursor::new(cursor.cue_index),
                 selected_cues
                     .iter()
                     .map(|edit_cue| edit_cue.index)
@@ -48,7 +50,7 @@ where
         };
 
         self.state.app_mode = AppMode::Select {
-            cue_index,
+            cursor,
             selected_cues,
         };
 
@@ -89,11 +91,11 @@ where
                     original_content,
                 }]);
                 let line_length = &subtitle_document_state.document.cues.cue_len(index);
-                let cursor = Cursor::new(index, *line_length);
+                let cursor = EditCursor::new(index, *line_length);
                 (cursor, selected_edit_cues.clone())
             }
             AppMode::Select {
-                cue_index,
+                cursor,
                 selected_cues,
             } => {
                 let selected_edit_cues = selected_cues
@@ -114,8 +116,11 @@ where
                         },
                     })
                     .collect::<Vec<EditCue>>();
-                let line_length = &subtitle_document_state.document.cues.cue_len(*cue_index);
-                let cursor = Cursor::new(*cue_index, *line_length);
+                let line_length = &subtitle_document_state
+                    .document
+                    .cues
+                    .cue_len(cursor.cue_index);
+                let cursor = EditCursor::new(cursor.cue_index, *line_length);
                 (cursor, selected_edit_cues.clone())
             }
 

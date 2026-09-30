@@ -15,14 +15,15 @@ where
             Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         for index in selected_cues.iter().rev() {
                             cues.remove(*index);
-                            if index < cue_index {
-                                *cue_index = cue_index.saturating_sub(1);
+                            if *index < cursor.cue_index {
+                                // cursor.cue_index = cursor.cue_index.saturating_sub(1);
+                                cursor.move_up();
                             }
                         }
                         *selected_cues = Vec::new();
@@ -30,8 +31,8 @@ where
                     SubtitleCues::Cue(cues) => {
                         for index in selected_cues.iter().rev() {
                             cues.remove(*index);
-                            if index < cue_index {
-                                *cue_index = cue_index.saturating_sub(1);
+                            if *index < cursor.cue_index {
+                                cursor.move_up();
                             }
                         }
                         *selected_cues = Vec::new();
@@ -39,8 +40,8 @@ where
                     SubtitleCues::Line(cues) => {
                         for index in selected_cues.iter().rev() {
                             cues.remove(*index);
-                            if index < cue_index {
-                                *cue_index = cue_index.saturating_sub(1);
+                            if *index < cursor.cue_index {
+                                cursor.move_up();
                             }
                         }
                         *selected_cues = Vec::new();
@@ -105,20 +106,20 @@ where
             Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
-                        selected_cues.retain(|c_index| c_index != cue_index);
-                        cues.remove(*cue_index);
+                        selected_cues.retain(|c_index| c_index != &cursor.cue_index);
+                        cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Cue(cues) => {
-                        selected_cues.retain(|c_index| c_index != cue_index);
-                        cues.remove(*cue_index);
+                        selected_cues.retain(|c_index| c_index != &cursor.cue_index);
+                        cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Line(cues) => {
-                        selected_cues.retain(|c_index| c_index != cue_index);
-                        cues.remove(*cue_index);
+                        selected_cues.retain(|c_index| c_index != &cursor.cue_index);
+                        cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::None => {}
                 },
@@ -161,7 +162,7 @@ where
                         match &mut self.state.app_mode {
                             AppMode::Normal => {}
                             AppMode::Select {
-                                cue_index: _,
+                                cursor,
                                 selected_cues,
                             } => {
                                 selected_cues.retain(|c_index| *c_index != indexed_cue.index);
@@ -191,7 +192,7 @@ where
                         match &mut self.state.app_mode {
                             AppMode::Normal => {}
                             AppMode::Select {
-                                cue_index: _,
+                                cursor,
                                 selected_cues,
                             } => {
                                 selected_cues.retain(|c_index| *c_index != indexed_cue.index);
@@ -221,7 +222,7 @@ where
                         match &mut self.state.app_mode {
                             AppMode::Normal => {}
                             AppMode::Select {
-                                cue_index: _,
+                                cursor,
                                 selected_cues,
                             } => {
                                 selected_cues.retain(|c_index| *c_index != indexed_cue.index);

@@ -4,7 +4,7 @@ use subtitles::subtitles::SubtitleCues;
 use crate::{
     app::App,
     history::CueTimeChange,
-    mode::{AppMode, Cursor},
+    mode::{AppMode, EditCursor, SelectCursor},
     renderer::Renderer,
 };
 
@@ -158,13 +158,13 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {
-                        let old_cue_index = cue_index.clone();
+                        let old_cue_index = cursor.cue_index.clone();
                         let new_cue_index = update_cue_index(
                             &mut document_state.document,
-                            cue_index,
+                            &mut cursor.cue_index,
                             new_position,
                             track,
                         );
@@ -179,8 +179,10 @@ where
                             }
                         }
 
+                        let new_cursor = SelectCursor::new(new_cue_index);
+
                         AppMode::Select {
-                            cue_index: new_cue_index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
@@ -207,7 +209,7 @@ where
                         }
 
                         let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        let new_cursor = EditCursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -274,15 +276,15 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cue_index: update_cue_index(
+                        cursor: SelectCursor::new(update_cue_index(
                             &mut document_state.document,
-                            cue_index,
+                            &mut cursor.cue_index,
                             new_position,
                             track,
-                        ),
+                        )),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -296,7 +298,7 @@ where
                             track,
                         );
                         let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        let new_cursor = EditCursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -388,13 +390,13 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {
-                        let old_cue_index = cue_index.clone();
+                        let old_cue_index = cursor.cue_index.clone();
                         let new_cue_index = increase_cue_index(
                             &mut document_state.document,
-                            cue_index,
+                            &mut cursor.cue_index,
                             forwards_cue_increment,
                             track,
                         );
@@ -409,8 +411,10 @@ where
                             }
                         }
 
+                        let new_cursor = SelectCursor::new(new_cue_index);
+
                         AppMode::Select {
-                            cue_index: new_cue_index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
@@ -437,7 +441,7 @@ where
                         }
 
                         let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        let new_cursor = EditCursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -497,15 +501,15 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cue_index: increase_cue_index(
+                        cursor: SelectCursor::new(increase_cue_index(
                             &mut document_state.document,
-                            cue_index,
+                            &mut cursor.cue_index,
                             forwards_cue_increment,
                             track,
-                        ),
+                        )),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -519,7 +523,7 @@ where
                             track,
                         );
                         let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        let new_cursor = EditCursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
@@ -589,14 +593,14 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cue_index: decrease_cue_index(
+                        cursor: SelectCursor::new(decrease_cue_index(
                             &mut document_state.document,
-                            cue_index,
+                            &mut cursor.cue_index,
                             backwards_cue_increment,
-                        ),
+                        )),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -609,7 +613,7 @@ where
                             backwards_cue_increment,
                         );
                         let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        let new_cursor = EditCursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
@@ -671,14 +675,14 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => AppMode::Select {
-                        cue_index: decrease_cue_index(
+                        cursor: SelectCursor::new(decrease_cue_index(
                             &mut document_state.document,
-                            cue_index,
+                            &mut cursor.cue_index,
                             backwards_cue_increment,
-                        ),
+                        )),
                         selected_cues: selected_cues.clone(),
                     },
                     AppMode::Edit {
@@ -691,7 +695,7 @@ where
                             backwards_cue_increment,
                         );
                         let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = Cursor::new(new_cue_index, line_length);
+                        let new_cursor = EditCursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
@@ -883,7 +887,7 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                     AppMode::Edit {
@@ -912,7 +916,7 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                     AppMode::Edit {
@@ -941,7 +945,7 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                     AppMode::Edit {
@@ -970,7 +974,7 @@ where
                         return Err(String::from("Cannot be in normal mode"));
                     }
                     AppMode::Select {
-                        cue_index,
+                        cursor,
                         selected_cues,
                     } => {}
                     AppMode::Edit {

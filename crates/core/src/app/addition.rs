@@ -16,44 +16,44 @@ where
             Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
-                        if cues.len() > *cue_index {
+                        if cues.len() > cursor.cue_index {
                             let empty_subtitle = AlignedCue {
                                 id: Uuid::new_v4(),
-                                start: cues[*cue_index].start,
-                                end: cues[*cue_index].end,
+                                start: cues[cursor.cue_index].start,
+                                end: cues[cursor.cue_index].end,
                                 words: Vec::new(),
                             };
-                            cues.insert(*cue_index + 1, empty_subtitle);
+                            cues.insert(cursor.cue_index + 1, empty_subtitle);
 
                             for cue in selected_cues.iter_mut() {
-                                if *cue + 1 >= *cue_index {
+                                if *cue + 1 >= cursor.cue_index {
                                     *cue += 1;
                                 }
                             }
                         }
                     }
                     SubtitleCues::Cue(cues) => {
-                        if cues.len() > *cue_index {
+                        if cues.len() > cursor.cue_index {
                             let empty_subtitle = Cue {
                                 id: Uuid::new_v4(),
-                                start: cues[*cue_index].start,
-                                end: cues[*cue_index].end,
+                                start: cues[cursor.cue_index].start,
+                                end: cues[cursor.cue_index].end,
                                 content: String::new(),
                             };
-                            cues.insert(*cue_index + 1, empty_subtitle);
+                            cues.insert(cursor.cue_index + 1, empty_subtitle);
                         }
                     }
                     SubtitleCues::Line(lines) => {
-                        if lines.len() > *cue_index {
+                        if lines.len() > cursor.cue_index {
                             let empty_subtitle = Line {
                                 id: Uuid::new_v4(),
                                 content: String::new(),
                             };
-                            lines.insert(*cue_index + 1, empty_subtitle);
+                            lines.insert(cursor.cue_index + 1, empty_subtitle);
                         }
                     }
                     SubtitleCues::None => {}
@@ -127,59 +127,59 @@ where
             Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
-                        if cues.len() > *cue_index {
+                        if cues.len() > cursor.cue_index {
                             let empty_subtitle = AlignedCue {
                                 id: Uuid::new_v4(),
-                                start: cues[*cue_index].start,
-                                end: cues[*cue_index].end,
+                                start: cues[cursor.cue_index].start,
+                                end: cues[cursor.cue_index].end,
                                 words: Vec::new(),
                             };
-                            cues.insert(*cue_index, empty_subtitle);
+                            cues.insert(cursor.cue_index, empty_subtitle);
 
                             for cue in selected_cues.iter_mut() {
-                                if cue >= cue_index {
+                                if *cue >= cursor.cue_index {
                                     *cue += 1;
                                 }
                             }
-                            *cue_index += 1;
+                            cursor.cue_index += 1;
                         }
                     }
                     SubtitleCues::Cue(cues) => {
-                        if cues.len() > *cue_index {
+                        if cues.len() > cursor.cue_index {
                             let empty_subtitle = Cue {
                                 id: Uuid::new_v4(),
-                                start: cues[*cue_index].start,
-                                end: cues[*cue_index].end,
+                                start: cues[cursor.cue_index].start,
+                                end: cues[cursor.cue_index].end,
                                 content: String::new(),
                             };
-                            cues.insert(*cue_index, empty_subtitle);
+                            cues.insert(cursor.cue_index, empty_subtitle);
 
                             for cue in selected_cues.iter_mut() {
-                                if cue >= cue_index {
+                                if *cue >= cursor.cue_index {
                                     *cue += 1;
                                 }
                             }
-                            *cue_index += 1;
+                            cursor.cue_index += 1;
                         }
                     }
                     SubtitleCues::Line(lines) => {
-                        if lines.len() > *cue_index {
+                        if lines.len() > cursor.cue_index {
                             let empty_subtitle = Line {
                                 id: Uuid::new_v4(),
                                 content: String::new(),
                             };
-                            lines.insert(*cue_index, empty_subtitle);
+                            lines.insert(cursor.cue_index, empty_subtitle);
 
                             for cue in selected_cues.iter_mut() {
-                                if cue >= cue_index {
+                                if *cue >= cursor.cue_index {
                                     *cue += 1;
                                 }
                             }
-                            *cue_index += 1;
+                            cursor.cue_index += 1;
                         }
                     }
                     SubtitleCues::None => {}
@@ -264,7 +264,7 @@ where
             Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
@@ -274,7 +274,7 @@ where
                             let empty_subtitle = AlignedCue {
                                 id: Uuid::new_v4(),
                                 start: cues[index].start,
-                                end: cues[*cue_index].end,
+                                end: cues[cursor.cue_index].end,
                                 words: Vec::new(),
                             };
 
@@ -290,7 +290,7 @@ where
                             let empty_subtitle = Cue {
                                 id: Uuid::new_v4(),
                                 start: cues[index].start,
-                                end: cues[*cue_index].end,
+                                end: cues[cursor.cue_index].end,
                                 content: String::new(),
                             };
 
@@ -381,7 +381,7 @@ where
             Some(subtitle_document_state) => match &mut self.state.app_mode {
                 AppMode::Normal => {}
                 AppMode::Select {
-                    cue_index,
+                    cursor,
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
@@ -391,7 +391,7 @@ where
                             let empty_subtitle = AlignedCue {
                                 id: Uuid::new_v4(),
                                 start: cues[index].start,
-                                end: cues[*cue_index].end,
+                                end: cues[cursor.cue_index].end,
                                 words: Vec::new(),
                             };
 
@@ -407,7 +407,7 @@ where
                             let empty_subtitle = Cue {
                                 id: Uuid::new_v4(),
                                 start: cues[index].start,
-                                end: cues[*cue_index].end,
+                                end: cues[cursor.cue_index].end,
                                 content: String::new(),
                             };
 
@@ -509,7 +509,7 @@ where
                         match &mut self.state.app_mode {
                             AppMode::Normal => {}
                             AppMode::Select {
-                                cue_index: _,
+                                cursor,
                                 selected_cues,
                             } => {
                                 for selected_cue in selected_cues {
@@ -543,7 +543,7 @@ where
                         match &mut self.state.app_mode {
                             AppMode::Normal => {}
                             AppMode::Select {
-                                cue_index: _,
+                                cursor,
                                 selected_cues,
                             } => {
                                 for selected_cue in selected_cues {
@@ -577,7 +577,7 @@ where
                         match &mut self.state.app_mode {
                             AppMode::Normal => {}
                             AppMode::Select {
-                                cue_index: _,
+                                cursor,
                                 selected_cues,
                             } => {
                                 for selected_cue in selected_cues {

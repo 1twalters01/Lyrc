@@ -2,7 +2,7 @@ use subtitles::subtitles::SubtitleCues;
 
 use crate::{
     app::App,
-    mode::{AppMode, Cursor},
+    mode::{AppMode, EditCursor, SelectCursor},
     renderer::Renderer,
     synchronizer::ActiveIndex,
 };
@@ -55,19 +55,26 @@ where
 
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
-                Some(index) => AppMode::Select {
-                    cue_index: index,
-                    selected_cues: Vec::new(),
-                },
+                Some(index) => {
+                    let cursor = SelectCursor { cue_index: index };
+                    AppMode::Select {
+                        cursor,
+                        selected_cues: Vec::new(),
+                    }
+                }
                 None => AppMode::Normal,
             },
             AppMode::Select {
-                cue_index,
+                cursor,
                 selected_cues,
-            } => AppMode::Select {
-                cue_index: cue_index.saturating_sub(1),
-                selected_cues: selected_cues.clone(),
-            },
+            } => {
+                let mut new_cursor = cursor.clone();
+                new_cursor.move_up();
+                AppMode::Select {
+                    cursor: new_cursor,
+                    selected_cues: selected_cues.clone(),
+                }
+            }
             AppMode::Edit {
                 cursor,
                 selected_cues,
@@ -98,46 +105,40 @@ where
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
                 Some(index) => AppMode::Select {
-                    cue_index: index,
+                    cursor: SelectCursor::new(index),
                     selected_cues: Vec::new(),
                 },
                 None => AppMode::Normal,
             },
             AppMode::Select {
-                cue_index,
+                cursor,
                 selected_cues,
             } => match &self.state.subtitle_documents.active() {
                 Some(subtitle_document_state) => match &subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
-                        let mut index = *cue_index;
-                        if index < cues.len() - 1 {
-                            index += 1;
-                        }
+                        let mut new_cursor = cursor.clone();
+                        new_cursor.move_down(cues.len());
 
                         AppMode::Select {
-                            cue_index: index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
                     SubtitleCues::Cue(cues) => {
-                        let mut index = *cue_index;
-                        if index < cues.len() - 1 {
-                            index += 1;
-                        }
+                        let mut new_cursor = cursor.clone();
+                        new_cursor.move_down(cues.len());
 
                         AppMode::Select {
-                            cue_index: index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
                     SubtitleCues::Line(cues) => {
-                        let mut index = *cue_index;
-                        if index < cues.len() - 1 {
-                            index += 1;
-                        }
+                        let mut new_cursor = cursor.clone();
+                        new_cursor.move_down(cues.len());
 
                         AppMode::Select {
-                            cue_index: index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
@@ -229,25 +230,30 @@ where
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
                 Some(index) => AppMode::Select {
-                    cue_index: index,
+                    cursor: SelectCursor::new(index),
                     selected_cues: Vec::new(),
                 },
                 None => AppMode::Normal,
             },
             AppMode::Select {
-                cue_index,
+                cursor,
                 selected_cues,
-            } => AppMode::Select {
-                cue_index: cue_index.saturating_sub(lines),
-                selected_cues: selected_cues.clone(),
-            },
+            } => {
+                let new_cursor_index = cursor.cue_index.saturating_sub(lines);
+                let new_cursor = SelectCursor::new(new_cursor_index);
+
+                AppMode::Select {
+                    cursor: new_cursor,
+                    selected_cues: selected_cues.clone(),
+                }
+            }
             AppMode::Edit {
                 cursor,
                 selected_cues,
             } => {
                 let new_cue_index = cursor.cue_index.saturating_sub(lines);
                 let line_length = subtitle_document_state.document.cues.cue_len(new_cue_index);
-                let new_cursor = Cursor::new(new_cue_index, line_length);
+                let new_cursor = EditCursor::new(new_cue_index, line_length);
 
                 AppMode::Edit {
                     cursor: new_cursor,
@@ -268,52 +274,58 @@ where
         let app_mode = match &self.state.app_mode {
             AppMode::Normal => match self.get_first_active_cue_index() {
                 Some(index) => AppMode::Select {
-                    cue_index: index,
+                    cursor: SelectCursor::new(index),
                     selected_cues: Vec::new(),
                 },
                 None => AppMode::Normal,
             },
             AppMode::Select {
-                cue_index,
+                cursor,
                 selected_cues,
             } => match &self.state.subtitle_documents.active() {
                 Some(subtitle_document_state) => match &subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
-                        let mut index = *cue_index;
+                        let mut index = cursor.cue_index;
                         if index < cues.len() - lines {
                             index += lines;
                         } else {
                             index = cues.len() - 1;
                         }
 
+                        let new_cursor = SelectCursor::new(index);
+
                         AppMode::Select {
-                            cue_index: index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
                     SubtitleCues::Cue(cues) => {
-                        let mut index = *cue_index;
+                        let mut index = cursor.cue_index;
                         if index < cues.len() - lines {
                             index += lines;
                         } else {
                             index = cues.len() - 1;
                         }
 
+                        let new_cursor = SelectCursor::new(index);
+
                         AppMode::Select {
-                            cue_index: index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
                     SubtitleCues::Line(cues) => {
-                        let mut index = *cue_index;
+                        let mut index = cursor.cue_index;
                         if index < cues.len() - lines {
                             index += lines;
                         } else {
                             index = cues.len() - 1;
                         }
 
+                        let new_cursor = SelectCursor::new(index);
+
                         AppMode::Select {
-                            cue_index: index,
+                            cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
                         }
                     }
@@ -335,7 +347,7 @@ where
                         }
 
                         let line_length = subtitle_document_state.document.cues.cue_len(new_index);
-                        let new_cursor = Cursor::new(new_index, line_length);
+                        let new_cursor = EditCursor::new(new_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -351,7 +363,7 @@ where
                         }
 
                         let line_length = subtitle_document_state.document.cues.cue_len(new_index);
-                        let new_cursor = Cursor::new(new_index, line_length);
+                        let new_cursor = EditCursor::new(new_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -367,7 +379,7 @@ where
                         }
 
                         let line_length = subtitle_document_state.document.cues.cue_len(new_index);
-                        let new_cursor = Cursor::new(new_index, line_length);
+                        let new_cursor = EditCursor::new(new_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,

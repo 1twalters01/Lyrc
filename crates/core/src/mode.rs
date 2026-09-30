@@ -2,6 +2,28 @@ use std::{cmp::min, collections::BTreeSet, fmt::Display};
 
 use subtitles::subtitles::SubtitleCues;
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SelectCursor {
+    pub cue_index: usize,
+}
+
+impl SelectCursor {
+    pub fn new(cue_index: usize) -> Self {
+        Self { cue_index }
+    }
+
+    pub fn move_up(&mut self) {
+        self.cue_index = self.cue_index.saturating_sub(1);
+    }
+
+    pub fn move_down(&mut self, line_count: usize) {
+        self.cue_index = min(
+            self.cue_index.saturating_add(1),
+            line_count.saturating_sub(1),
+        );
+    }
+}
+
 #[derive(Clone, PartialEq)]
 pub struct EditCue {
     pub index: usize,
@@ -9,13 +31,13 @@ pub struct EditCue {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Cursor {
+pub struct EditCursor {
     pub cue_index: usize,
     pub active_column: usize,
     pub target_column: usize,
 }
 
-impl Cursor {
+impl EditCursor {
     pub fn new(cue_index: usize, line_length: usize) -> Self {
         Self {
             cue_index,
@@ -71,13 +93,12 @@ impl Cursor {
 pub enum AppMode {
     Normal,
     Select {
-        cue_index: usize,
         selected_cues: Vec<usize>,
-        // selected_cues: BTreeSet<usize>,
+        cursor: SelectCursor,
     },
     Edit {
-        cursor: Cursor,
         selected_cues: Vec<EditCue>,
+        cursor: EditCursor,
     },
 }
 
@@ -86,13 +107,13 @@ impl Display for AppMode {
         match self {
             Self::Normal => write!(f, "normal"),
             Self::Select {
-                cue_index,
                 selected_cues: _,
+                cursor: SelectCursor { cue_index },
             } => write!(f, "select cue: {:?}", cue_index),
             Self::Edit {
                 selected_cues: _,
                 cursor:
-                    Cursor {
+                    EditCursor {
                         cue_index,
                         active_column,
                         target_column: _,

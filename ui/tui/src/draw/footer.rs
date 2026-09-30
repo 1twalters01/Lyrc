@@ -19,11 +19,11 @@ pub fn draw_footer<A: Debug>(
             automatic_scroll_offset, active_cues, mode, modal,
         ),
         AppMode::Select {
-            cue_index,
+            cursor,
             selected_cues: _,
         } => format!(
             "selected line: {:?}, automatic scroll: {:?}\nactive cues: {:?} mode: {:?}\nmodal: {:?}",
-            cue_index, automatic_scroll_offset, active_cues, mode, modal,
+            cursor, automatic_scroll_offset, active_cues, mode, modal,
         ),
         AppMode::Edit {
             cursor,

@@ -85,6 +85,7 @@ pub async fn handle_key<R: Renderer>(
                 if let Some(player) = new_player {
                     app.mpris_client = MprisClient::connect(&player).await?;
                     app.update_track().await;
+                    app.state.subtitle_documents.clear_cache();
                     app.update_subtitle_document().await;
                 }
             }

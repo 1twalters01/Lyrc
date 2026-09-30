@@ -16,9 +16,9 @@ pub async fn handle_keyboard_event<R: Renderer>(
     match &app.state.app_mode {
         AppMode::Normal => keyboard::normal::handle_key(app, key, &config).await,
         AppMode::Select {
-            cue_index,
+            cursor,
             selected_cues: _,
-        } => keyboard::select::handle_key(app, key, *cue_index, &config).await,
+        } => keyboard::select::handle_key(app, key, &config).await,
         AppMode::Edit {
             cursor: _,
             selected_cues: _,

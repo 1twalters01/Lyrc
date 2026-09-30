@@ -11,13 +11,23 @@ use subtitles::subtitles::SubtitleCues;
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
     key: KeyEvent,
-    cue_index: usize,
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut document_state = app.state.subtitle_documents.active_mut();
     let document_state = match &mut document_state {
         Some(document_state) => document_state,
         None => {
+            app.switch_to_normal_mode();
+            return Ok(());
+        }
+    };
+
+    let (cursor, selected_cues) = match &app.state.app_mode {
+        AppMode::Select {
+            cursor,
+            selected_cues,
+        } => (cursor, selected_cues),
+        _ => {
             app.switch_to_normal_mode();
             return Ok(());
         }
@@ -63,7 +73,7 @@ pub async fn handle_key<R: Renderer>(
             }
         }
         KeyCode::Tab => app.switch_to_edit_mode()?,
-        KeyCode::Enter => app.seek_to_selected_line(cue_index).await?,
+        KeyCode::Enter => app.seek_to_selected_line(cursor.cue_index).await?,
 
         // Playback control
         KeyCode::Char(' ') => app.toggle_play_pause().await?,
@@ -83,7 +93,7 @@ pub async fn handle_key<R: Renderer>(
                 let cues = match &app.state.app_mode {
                     AppMode::Normal => Vec::new(),
                     AppMode::Select {
-                        cue_index: _,
+                        cursor: _,
                         selected_cues,
                     } => selected_cues
                         .iter()
@@ -113,7 +123,7 @@ pub async fn handle_key<R: Renderer>(
                 let cues = match &app.state.app_mode {
                     AppMode::Normal => Vec::new(),
                     AppMode::Select {
-                        cue_index: _,
+                        cursor: _,
                         selected_cues,
                     } => selected_cues
                         .iter()
@@ -143,7 +153,7 @@ pub async fn handle_key<R: Renderer>(
                 let cues = match &app.state.app_mode {
                     AppMode::Normal => Vec::new(),
                     AppMode::Select {
-                        cue_index: _,
+                        cursor: _,
                         selected_cues,
                     } => selected_cues
                         .iter()
@@ -181,11 +191,11 @@ pub async fn handle_key<R: Renderer>(
         // Adjust cue time
         KeyCode::Char('m') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -209,11 +219,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -241,11 +251,11 @@ pub async fn handle_key<R: Renderer>(
         },
         KeyCode::Char(',') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -269,11 +279,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -301,11 +311,11 @@ pub async fn handle_key<R: Renderer>(
         },
         KeyCode::Char('.') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -329,11 +339,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -361,11 +371,11 @@ pub async fn handle_key<R: Renderer>(
         },
         KeyCode::Char('/') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -389,11 +399,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -421,11 +431,11 @@ pub async fn handle_key<R: Renderer>(
         },
         KeyCode::Char('M') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -449,11 +459,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -481,11 +491,11 @@ pub async fn handle_key<R: Renderer>(
         },
         KeyCode::Char('<') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -509,11 +519,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -541,11 +551,11 @@ pub async fn handle_key<R: Renderer>(
         },
         KeyCode::Char('>') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -569,11 +579,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -601,11 +611,11 @@ pub async fn handle_key<R: Renderer>(
         },
         KeyCode::Char('?') => match &mut document_state.document.cues {
             SubtitleCues::Word(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -629,11 +639,11 @@ pub async fn handle_key<R: Renderer>(
                 app.push_to_history(edit);
             }
             SubtitleCues::Cue(cues) => {
-                let cue = &cues[cue_index];
+                let cue = &cues[cursor.cue_index];
                 let mut changes = Vec::from([CueTimeChange {
                     id: cue.id.clone(),
-                    new_index: cue_index,
-                    old_index: cue_index,
+                    new_index: cursor.cue_index,
+                    old_index: cursor.cue_index,
                     new_start: cue.start,
                     old_start: cue.start,
                     new_end: cue.end,
@@ -662,11 +672,11 @@ pub async fn handle_key<R: Renderer>(
         KeyCode::Char('c') => match app.clock.get_position() {
             Some(position) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
-                    let cue = &cues[cue_index];
+                    let cue = &cues[cursor.cue_index];
                     let mut changes = Vec::from([CueTimeChange {
                         id: cue.id.clone(),
-                        new_index: cue_index,
-                        old_index: cue_index,
+                        new_index: cursor.cue_index,
+                        old_index: cursor.cue_index,
                         new_start: cue.start,
                         old_start: cue.start,
                         new_end: cue.end,
@@ -690,11 +700,11 @@ pub async fn handle_key<R: Renderer>(
                     app.push_to_history(edit);
                 }
                 SubtitleCues::Cue(cues) => {
-                    let cue = &cues[cue_index];
+                    let cue = &cues[cursor.cue_index];
                     let mut changes = Vec::from([CueTimeChange {
                         id: cue.id.clone(),
-                        new_index: cue_index,
-                        old_index: cue_index,
+                        new_index: cursor.cue_index,
+                        old_index: cursor.cue_index,
                         new_start: cue.start,
                         old_start: cue.start,
                         new_end: cue.end,
@@ -725,11 +735,11 @@ pub async fn handle_key<R: Renderer>(
         KeyCode::Char('C') => match app.clock.get_position() {
             Some(position) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
-                    let cue = &cues[cue_index];
+                    let cue = &cues[cursor.cue_index];
                     let mut changes = Vec::from([CueTimeChange {
                         id: cue.id.clone(),
-                        new_index: cue_index,
-                        old_index: cue_index,
+                        new_index: cursor.cue_index,
+                        old_index: cursor.cue_index,
                         new_start: cue.start,
                         old_start: cue.start,
                         new_end: cue.end,
@@ -753,11 +763,11 @@ pub async fn handle_key<R: Renderer>(
                     app.push_to_history(edit);
                 }
                 SubtitleCues::Cue(cues) => {
-                    let cue = &cues[cue_index];
+                    let cue = &cues[cursor.cue_index];
                     let mut changes = Vec::from([CueTimeChange {
                         id: cue.id.clone(),
-                        new_index: cue_index,
-                        old_index: cue_index,
+                        new_index: cursor.cue_index,
+                        old_index: cursor.cue_index,
                         new_start: cue.start,
                         old_start: cue.start,
                         new_end: cue.end,
