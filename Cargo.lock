@@ -1638,6 +1638,7 @@ dependencies = [
  "alignment",
  "chrono",
  "configuration",
+ "lyrics",
  "mpris",
  "subtitles",
  "synchronizer",
@@ -1652,6 +1653,7 @@ name = "lyrics"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "configuration",
  "futures",
  "mpris",
  "pyo3",

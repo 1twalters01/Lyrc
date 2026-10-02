@@ -17,6 +17,7 @@
 ## Release Criteria
 - [x] Reliably detects the current track
 - [ ] Can download lyrics of current track
+    - [x] Can choose the download provider
     - [x] From LrcLib
     - [ ] From Musixmatch
 - [x] Can force-align lyrics
@@ -52,6 +53,7 @@
 - [ ] Handles errors gracefully
     - [ ] Handles errors from rust without crashing
     - [ ] Handles errors from python without crashing
+- [ ] Test everything
 - [ ] Write requirements and fully go through them
 - [ ] Good UI/UX
     - [ ] Good Keyboard commands

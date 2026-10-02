@@ -11,6 +11,8 @@ pyo3-async-runtimes = { version = "0.29.0", features = ["testing", "attributes",
 tokio = { version = "1.53.1", features = ["full"] }
 mpris = { path = "../mpris/" }
 
+configuration = { path = "../configuration/"}
+
 [features]
 python-tests = []
 

@@ -12,6 +12,7 @@ zbus = { version = "5.17.0", features = ["tokio"] }
 configuration = { path = "../../crates/configuration/" }
 translation = { path = "../translation/" }
 alignment = { path = "../alignment/" }
+lyrics = { path = "../lyrics/" }
 synchronizer = { path = "../synchronizer/" }
 subtitles = { path = "../subtitles/" }
 mpris = { path = "../mpris/" }

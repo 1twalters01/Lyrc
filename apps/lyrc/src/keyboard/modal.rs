@@ -4,14 +4,14 @@ use configuration::config::Config;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lyrc_core::{
     app::App,
-    modal::{Modal, ModalError},
+    modal::{Modal, ModalError, ModalOption},
     renderer::Renderer,
-    state::{SubtitleDocumentState, SubtitleDocuments, SubtitleVariant},
+    state::{SubtitleDocumentState, SubtitleVariant},
 };
+use lyrics::{models::LyricsFormat, service::DownloadService};
 use mpris::client::MprisClient;
 use subtitles::{
-    language::Language,
-    subtitles::{SubtitleDocument, SyncLevel},
+    formats::lrc::parser::LrcParser, language::Language, parser::SubtitleParser, subtitles::SyncLevel
 };
 
 pub async fn handle_key<R: Renderer>(
@@ -21,24 +21,156 @@ pub async fn handle_key<R: Renderer>(
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match modal {
+        Modal::Selection { options, new_modal } => match key.code {
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Esc => app.state.modal = None,
+
+            KeyCode::Up => {
+                let options = match app.state.subtitle_documents.active() {
+                    Some(_) => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                        ModalOption::Alignment,
+                        ModalOption::Translate
+                    ]),
+                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                };
+                app.state.modal = match new_modal {
+                    ModalOption::Player => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Alignment) {
+                            ModalOption::Alignment
+                        } else {
+                            ModalOption::Download
+                        },
+                        options,
+                    }),
+                    ModalOption::Download => Some(Modal::Selection {
+                        options,
+                        new_modal: ModalOption::Player,
+                    }),
+                    ModalOption::Translate => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Download) {
+                            ModalOption::Download
+                        } else {
+                            ModalOption::Player
+                        },
+                        options,
+                    }),
+                    ModalOption::Alignment => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Translate) {
+                            ModalOption::Translate
+                        } else {
+                            ModalOption::Player
+                        },
+                        options,
+                    }),
+                }
+            },
+            KeyCode::Down => {
+                let options = match app.state.subtitle_documents.active() {
+                    Some(_) => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                        ModalOption::Alignment,
+                        ModalOption::Translate
+                    ]),
+                    None => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                    ]),
+                };
+                app.state.modal = match new_modal {
+                    ModalOption::Player => Some(Modal::Selection {
+                        new_modal: ModalOption::Download,
+                        options,
+                    }),
+                    ModalOption::Download => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Translate) {
+                            ModalOption::Translate
+                        } else {
+                            ModalOption::Player
+                        },
+                        options,
+                    }),
+                    ModalOption::Translate => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Alignment) {
+                            ModalOption::Alignment
+                        } else {
+                            ModalOption::Player
+                        },
+                        options,
+                    }),
+                    ModalOption::Alignment => Some(Modal::Selection {
+                        options,
+                        new_modal: ModalOption::Player,
+                    }),
+                }
+            }
+
+            KeyCode::Enter => {
+                    match new_modal {
+                        ModalOption::Player => {
+                            app.state.modal = Some(Modal::Player {
+                                players: MprisClient::find_players().await?,
+                                new_player: None,
+                                error: None,
+                            })
+                        }
+                    ModalOption::Download => {
+                        app.state.modal = Some(Modal::Download {
+                            providers: DownloadService::get_providers(config),
+                            new_provider: DownloadService::get_prefered_provider(config),
+                            error: None
+                        })
+                    }
+                        ModalOption::Translate => {
+                            app.state.modal = Some(Modal::Translate {
+                                input: String::new(),
+                                input_variant: None,
+                                new_variant: None,
+                                error: None,
+                            })
+                        }
+                        ModalOption::Alignment => {
+                            app.state.modal = Some(Modal::Alignment {
+                                new_alignment: app
+                                    .state
+                                    .subtitle_documents
+                                    .active()
+                                    .map(|state| state.document.sync_level())
+                                    .unwrap_or(SyncLevel::None),
+                                error: None,
+                            })
+                        }
+                    }
+            }
+
+            _ => {}
+        },
         Modal::Player {
             players,
             new_player,
             error,
         } => match key.code {
             KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
-            KeyCode::Esc => app.state.modal = None,
-
-            KeyCode::Tab => {
-                if app.state.subtitle_documents.active().is_some() {
-                    app.state.modal = Some(Modal::Translate {
-                        input: String::new(),
-                        input_variant: None,
-                        new_variant: None,
-                        error: None,
-                    })
-                }
-            }
+            KeyCode::Esc => {
+                let options = match app.state.subtitle_documents.active() {
+                    Some(_) => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                        ModalOption::Alignment,
+                        ModalOption::Translate
+                    ]),
+                    None => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                    ]),
+                };
+                app.state.modal = Some(Modal::Selection {
+                    options,
+                    new_modal: ModalOption::Player,
+                });
+            },
 
             KeyCode::Char(' ') => {
                 app.state.modal = Some(Modal::Player {
@@ -91,6 +223,97 @@ pub async fn handle_key<R: Renderer>(
             }
             _ => {}
         },
+        Modal::Download { providers, new_provider, error } => match key.code {
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Esc => {
+                let options = match app.state.subtitle_documents.active() {
+                    Some(_) => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                        ModalOption::Alignment,
+                        ModalOption::Translate
+                    ]),
+                    None => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                    ]),
+                };
+                app.state.modal = Some(Modal::Selection {
+                    new_modal: if options.contains(&ModalOption::Translate) {
+                        ModalOption::Translate
+                    } else {
+                        ModalOption::Player
+                    },
+                    options,
+                });
+            },
+
+            KeyCode::Up => {
+                app.state.modal = Some(Modal::Download {
+                    providers,
+                    new_provider: match new_provider {
+                        DownloadService::LibLrc => DownloadService::Musixmatch,
+                        DownloadService::Musixmatch => DownloadService::LibLrc,
+                    },
+                    error: None,
+                });
+            },
+            KeyCode::Down => {
+                app.state.modal = Some(Modal::Download {
+                    providers,
+                    new_provider: match new_provider {
+                        DownloadService::LibLrc => DownloadService::Musixmatch,
+                        DownloadService::Musixmatch => DownloadService::LibLrc,
+                    },
+                    error: None,
+                });
+            },
+
+            KeyCode::Enter => {
+                if app.state.subtitle_documents.get_original().is_none() {
+                    let lyrics_provider = new_provider.get_provider();
+                    let track = app.state.track.clone();
+                    let subtitle_document = match track {
+                        Some(track) => {
+                            let lyrics = lyrics_provider.search(track.clone()).await?;
+                            let mut document_path = None;
+                            if let Some(lyrics) = lyrics {
+                                match lyrics.format {
+                                    LyricsFormat::Lrc => {
+                                        if let Some(file_path) = track.file_path {
+                                            let mut lrc_path = file_path.to_path_buf();
+                                            lrc_path.set_extension("lrc");
+                                            document_path = Some(lrc_path);
+                                        }
+                                        let mut document = LrcParser.parse(&lyrics.content)?;
+                                        document.metadata.file_path = document_path;
+
+                                        Some(document)
+                                    }
+                                    LyricsFormat::Text => None,
+                                }
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    };
+
+                    if let Some(subtitle_document) = subtitle_document {
+                        app.state.subtitle_documents.insert(
+                            SubtitleVariant::Original,
+                            SubtitleDocumentState::new(subtitle_document),
+                        );
+                    }
+
+                    if app.state.subtitle_documents.active().is_none() {
+                        app.state.subtitle_documents.select_default();
+                    }
+                }
+            },
+
+            _ => {},
+        }
         Modal::Translate {
             mut input,
             mut input_variant,
@@ -98,19 +321,28 @@ pub async fn handle_key<R: Renderer>(
             mut error,
         } => match key.code {
             KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
-            KeyCode::Esc => app.state.modal = None,
-
-            KeyCode::Tab => {
-                app.state.modal = Some(Modal::Alignment {
-                    new_alignment: app
-                        .state
-                        .subtitle_documents
-                        .active()
-                        .map(|state| state.document.sync_level())
-                        .unwrap_or(SyncLevel::None),
-                    error: None,
-                })
-            }
+            KeyCode::Esc => {
+                let options = match app.state.subtitle_documents.active() {
+                    Some(_) => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                        ModalOption::Alignment,
+                        ModalOption::Translate
+                    ]),
+                    None => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                    ]),
+                };
+                app.state.modal = Some(Modal::Selection {
+                    new_modal: if options.contains(&ModalOption::Translate) {
+                        ModalOption::Translate
+                    } else {
+                        ModalOption::Player
+                    },
+                    options,
+                });
+            },
 
             KeyCode::Char(char) => {
                 input.push(char);
@@ -182,21 +414,28 @@ pub async fn handle_key<R: Renderer>(
             error,
         } => match key.code {
             KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
-            KeyCode::Esc => app.state.modal = None,
-
-            KeyCode::Tab => {
-                // app.state.modal = Some(Modal::Translate {
-                //     input: String::new(),
-                //     input_variant: None,
-                //     new_variant: None,
-                //     error: None,
-                // })
-                app.state.modal = Some(Modal::Player {
-                    players: MprisClient::find_players().await?,
-                    new_player: None,
-                    error: None,
-                })
-            }
+            KeyCode::Esc => {
+                let options = match app.state.subtitle_documents.active() {
+                    Some(_) => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                        ModalOption::Alignment,
+                        ModalOption::Translate
+                    ]),
+                    None => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                    ]),
+                };
+                app.state.modal = Some(Modal::Selection {
+                    new_modal: if options.contains(&ModalOption::Translate) {
+                        ModalOption::Alignment
+                    } else {
+                        ModalOption::Player
+                    },
+                    options,
+                });
+            },
 
             KeyCode::Up => {
                 app.state.modal = Some(Modal::Alignment {

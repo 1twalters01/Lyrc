@@ -3,17 +3,10 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lyrc_core::{
     app::App,
     history::{CueTimeChange, Edit},
-    modal::Modal,
+    modal::{Modal, ModalOption},
     renderer::Renderer,
-    state::{SubtitleDocumentState, SubtitleVariant},
 };
-use lyrics::{models::LyricsFormat, service::LyricsService};
-use subtitles::{
-    formats::lrc::parser::LrcParser,
-    language::Language,
-    parser::SubtitleParser,
-    subtitles::{SubtitleCues, SyncLevel},
-};
+use subtitles::subtitles::SubtitleCues;
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,
@@ -669,76 +662,24 @@ pub async fn handle_key<R: Renderer>(
             app.push_to_history(edit);
         }
 
-        // align lyrics
-        // KeyCode::Char('a') => app.start_alignment().await?,
+        // Modal
         KeyCode::Char('a') => {
-            app.state.modal = Some(Modal::Alignment {
-                new_alignment: app
-                    .state
-                    .subtitle_documents
-                    .active()
-                    .map(|state| state.document.sync_level())
-                    .unwrap_or(SyncLevel::None),
-                error: None,
-            })
-        }
-
-        // Translate lyrics
-        // Only to French for now
-        // KeyCode::Char('t') => app.start_translation(Language::French).await?,
-        KeyCode::Char('t') => {
-            app.state.modal = Some(Modal::Translate {
-                input: String::new(),
-                input_variant: None,
-                new_variant: None,
-                error: None,
-            })
-        }
-
-        // download lyrics
-        KeyCode::Char('d') => {
-            if app.state.subtitle_documents.get_original().is_none() {
-                // store in app? and have app.lyrics_service or something?
-                let lyrics_service = LyricsService::default();
-                let lyrics_provider = lyrics_service.providers.get("lrclib");
-                let track = app.state.track.clone();
-                let subtitle_document = match (lyrics_provider, track) {
-                    (Some(provider), Some(track)) => {
-                        let lyrics = provider.search(track.clone()).await?;
-                        let mut document_path = None;
-                        if let Some(lyrics) = lyrics {
-                            match lyrics.format {
-                                LyricsFormat::Lrc => {
-                                    if let Some(file_path) = track.file_path {
-                                        let mut lrc_path = file_path.to_path_buf();
-                                        lrc_path.set_extension("lrc");
-                                        document_path = Some(lrc_path);
-                                    }
-                                    let mut document = LrcParser.parse(&lyrics.content)?;
-                                    document.metadata.file_path = document_path;
-
-                                    Some(document)
-                                }
-                                LyricsFormat::Text => None,
-                            }
-                        } else {
-                            None
-                        }
-                    }
-                    (_, _) => None,
-                };
-
-                if let Some(subtitle_document) = subtitle_document {
-                    app.state.subtitle_documents.insert(
-                        SubtitleVariant::Original,
-                        SubtitleDocumentState::new(subtitle_document),
-                    );
-                }
-
-                if app.state.subtitle_documents.active().is_none() {
-                    app.state.subtitle_documents.select_default();
-                }
-            }
+            let options = match app.state.subtitle_documents.active() {
+                Some(_) => Vec::from([
+                    ModalOption::Player,
+                    ModalOption::Download,
+                    ModalOption::Alignment,
+                    ModalOption::Translate
+                ]),
+                None => Vec::from([
+                    ModalOption::Player,
+                    ModalOption::Download,
+                ]),
+            };
+            app.state.modal = Some(Modal::Selection {
+                options,
+                new_modal: ModalOption::Player,
+            });
         }
 
         _ => {}
