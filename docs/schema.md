@@ -16,32 +16,32 @@ song_id             Index(UUID)
 artist_id           Index(UUID)         Could be a cover so artist needed here as well
 duration_ms         INTEGER
 
-## Source
+## Source -> migrations/0001_fixed_tables.sql
 id                  UUID
-name                TEXT                e.g. musicbrainz, or liblrc
+source              TEXT                e.g. musicbrainz, or liblrc
 
 ## Recording Identifier
 id                  UUID
 recording_id        Index(UUID)
-source_id           UUID
+source_id           UUID                Source of the recording identifier
 identifier          TEXT                Identifier from the source
 UNIQUE(source_id, identifier)
 
-## Translation
-id                  UUID
-type                TEXT                Original, Translated
+## Translation -> migrations/0001_fixed_tables.sql
+id                  INTEGER
+name                TEXT                Original, Translated
 
-## Language
+## Language -> migrations/0001_fixed_tables.sql
 id                  UUID
-language            TEXT
+code                TEXT
 
-## Lyrics Variant
+## Lyrics Variant 
 id                  UUID
-translation_id      UUID
+translation_id      INTEGER
 language_id         UUID
 UNIQUE(translation_id, language_id)
 
-## Lyrics Format
+## Lyrics Format -> migrations/0001_fixed_tables.sql
 id                  UUID
 format              TEXT                e.g. lrc, text or elrc
 
