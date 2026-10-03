@@ -1,6 +1,6 @@
 use pyo3_async_runtimes::TaskLocals;
 use tokio::sync::mpsc;
-use translation::{
+use translator::{
     messages::{TranslationRequest, TranslationResult, TranslationTask},
     provider::LyricsTranslator,
     providers::argos::ArgosTranslator,

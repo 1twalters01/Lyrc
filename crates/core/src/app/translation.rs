@@ -1,5 +1,5 @@
 use subtitles::language::Language;
-use translation::{
+use translator::{
     error::TranslationError,
     messages::{TranslationRequest, TranslationTask},
 };

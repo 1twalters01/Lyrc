@@ -3,5 +3,5 @@ resolver = "2"
 members = [
     "crates/*/",
     "apps/*/",
-    "ui/tui/", "crates/translation", "ui/gui",
+    "ui/tui/", "ui/gui",
 ]

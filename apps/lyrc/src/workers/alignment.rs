@@ -1,6 +1,6 @@
 use std::thread;
 
-use alignment::{
+use aligner::{
     messages::{AlignmentRequest, AlignmentResult, AlignmentTask},
     provider::LyricsAligner,
     providers::{whisperx_cue::WhisperXCueAligner, whisperx_word::WhisperXWordAligner},

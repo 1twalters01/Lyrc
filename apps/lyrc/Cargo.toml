@@ -12,13 +12,13 @@ pyo3 = { version = "0.29.0", features = ["auto-initialize"] }
 pyo3-async-runtimes = { version = "0.29.0", features = ["testing", "attributes", "tokio-runtime"] }
 tokio = { version = "1.52.3", features = ["sync", "macros", "rt-multi-thread"] }
 
-alignment = { path = "../../crates/alignment/" }
 configuration = { path = "../../crates/configuration/" }
 gui = { path = "../../ui/gui/" }
-lyrics = { path = "../../crates/lyrics/" }
 lyrc_core = { path = "../../crates/core/" }
 mpris = { path = "../../crates/mpris/" }
 subtitles = { path = "../../crates/subtitles/" }
 synchronizer = { path = "../../crates/synchronizer/" }
-translation = { path = "../../crates/translation/" }
+downloader = { path = "../../crates/downloader/" }
+aligner = { path = "../../crates/aligner/" }
+translator = { path = "../../crates/translator/" }
 tui = { path = "../../ui/tui/" }

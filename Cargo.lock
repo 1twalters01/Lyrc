@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "alignment"
+name = "aligner"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -710,6 +710,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61"
 dependencies = [
  "litrs",
+]
+
+[[package]]
+name = "downloader"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "configuration",
+ "futures",
+ "mpris",
+ "pyo3",
+ "pyo3-async-runtimes",
+ "tokio",
 ]
 
 [[package]]
@@ -1612,22 +1625,22 @@ dependencies = [
 name = "lyrc"
 version = "0.1.0"
 dependencies = [
- "alignment",
+ "aligner",
  "chrono",
  "clap",
  "configuration",
  "crossterm",
+ "downloader",
  "futures-util",
  "gui",
  "lyrc_core",
- "lyrics",
  "mpris",
  "pyo3",
  "pyo3-async-runtimes",
  "subtitles",
  "synchronizer",
  "tokio",
- "translation",
+ "translator",
  "tui",
 ]
 
@@ -1635,30 +1648,17 @@ dependencies = [
 name = "lyrc_core"
 version = "0.1.0"
 dependencies = [
- "alignment",
+ "aligner",
  "chrono",
  "configuration",
- "lyrics",
+ "downloader",
  "mpris",
  "subtitles",
  "synchronizer",
  "tokio",
- "translation",
+ "translator",
  "uuid",
  "zbus",
-]
-
-[[package]]
-name = "lyrics"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "configuration",
- "futures",
- "mpris",
- "pyo3",
- "pyo3-async-runtimes",
- "tokio",
 ]
 
 [[package]]
@@ -2914,7 +2914,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "translation"
+name = "translator"
 version = "0.1.0"
 dependencies = [
  "chrono",

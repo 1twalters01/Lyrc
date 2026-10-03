@@ -1,4 +1,4 @@
-use lyrics::service::DownloadService;
+use downloader::service::DownloadService;
 use subtitles::subtitles::SyncLevel;
 
 use crate::state::SubtitleVariant;

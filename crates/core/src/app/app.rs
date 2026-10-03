@@ -1,8 +1,8 @@
-use alignment::messages::AlignmentRequest;
+use aligner::messages::AlignmentRequest;
 use configuration::config::Config;
 use mpris::client::MprisClient;
 use tokio::sync::mpsc::Sender;
-use translation::messages::TranslationRequest;
+use translator::messages::TranslationRequest;
 
 use crate::{
     clock::PlaybackClock, renderer::Renderer, state::AppState, synchronizer::AppSynchronizer,

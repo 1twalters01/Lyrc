@@ -1,4 +1,4 @@
-use alignment::{
+use aligner::{
     error::AlignmentError,
     messages::{AlignmentRequest, AlignmentTask},
 };

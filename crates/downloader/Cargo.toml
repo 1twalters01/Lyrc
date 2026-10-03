@@ -1,5 +1,5 @@
 [package]
-name = "translation"
+name = "downloader"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,8 +8,10 @@ chrono = "0.4.45"
 futures = "0.3.33"
 pyo3 = { version = "0.29.0", features = ["auto-initialize"] }
 pyo3-async-runtimes = { version = "0.29.0", features = ["testing", "attributes", "tokio-runtime"] }
-subtitles = { path = "../subtitles/" }
-uuid = { version = "1.24.1", features = ["v4", "fast-rng", "macro-diagnostics"] }
+tokio = { version = "1.53.1", features = ["full"] }
+mpris = { path = "../mpris/" }
+
+configuration = { path = "../configuration/"}
 
 [features]
 python-tests = []

@@ -1,8 +1,8 @@
-use alignment::messages::AlignmentResult;
+use aligner::messages::AlignmentResult;
 use chrono::Duration;
 use mpris::playback::{PlaybackStatus, PlayerEvent};
 use subtitles::subtitles::SyncLevel;
-use translation::messages::TranslationResult;
+use translator::messages::TranslationResult;
 
 use crate::{
     app::App,

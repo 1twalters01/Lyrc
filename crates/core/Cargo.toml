@@ -10,9 +10,9 @@ uuid = { version = "1.24.1", features = ["v4", "fast-rng", "macro-diagnostics"] 
 zbus = { version = "5.17.0", features = ["tokio"] }
 
 configuration = { path = "../../crates/configuration/" }
-translation = { path = "../translation/" }
-alignment = { path = "../alignment/" }
-lyrics = { path = "../lyrics/" }
+translator = { path = "../translator/" }
+aligner = { path = "../aligner/" }
+downloader = { path = "../downloader/" }
 synchronizer = { path = "../synchronizer/" }
 subtitles = { path = "../subtitles/" }
 mpris = { path = "../mpris/" }

@@ -8,7 +8,7 @@ use lyrc_core::{
     renderer::Renderer,
     state::{SubtitleDocumentState, SubtitleVariant},
 };
-use lyrics::{models::LyricsFormat, service::DownloadService};
+use downloader::{models::LyricsFormat, service::DownloadService};
 use mpris::client::MprisClient;
 use subtitles::{
     formats::lrc::parser::LrcParser, language::Language, parser::SubtitleParser, subtitles::SyncLevel
