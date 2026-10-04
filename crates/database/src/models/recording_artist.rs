@@ -125,4 +125,3 @@ impl RecordingArtistRow {
         .map(|exists| exists != 0)
     }
 }
-

@@ -25,7 +25,7 @@ impl RecordingRow {
             "#,
             recording_uuid,
         )
-            .fetch_optional(pool)
+        .fetch_optional(pool)
         .await
     }
 
@@ -89,14 +89,11 @@ impl RecordingRow {
             "#,
             song_artist_uuid,
         )
-            .fetch_all(pool)
-            .await
+        .fetch_all(pool)
+        .await
     }
 
-    pub async fn insert(
-        &self,
-        pool: &Pool<Sqlite>,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn insert(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO recording (uuid, song_uuid, duration_ms)
@@ -106,13 +103,13 @@ impl RecordingRow {
             self.song_uuid,
             self.duration_ms,
         )
-            .execute(pool)
+        .execute(pool)
         .await?;
 
         Ok(())
     }
 
-pub async fn update_duration(
+    pub async fn update_duration(
         pool: &Pool<Sqlite>,
         recording_uuid: Uuid,
         duration_ms: i64,
@@ -143,10 +140,7 @@ pub async fn update_duration(
         Ok(())
     }
 
-    pub async fn delete(
-        pool: &Pool<Sqlite>,
-        recording_uuid: Uuid,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn delete(pool: &Pool<Sqlite>, recording_uuid: Uuid) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"
                 DELETE FROM recording
@@ -160,7 +154,10 @@ pub async fn update_duration(
         Ok(result.rows_affected() > 0)
     }
 
-    pub async fn uuid_exists(pool: &Pool<Sqlite>, recording_uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn uuid_exists(
+        pool: &Pool<Sqlite>,
+        recording_uuid: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
             r#"
                 SELECT EXISTS(

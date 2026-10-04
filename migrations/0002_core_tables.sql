@@ -51,7 +51,7 @@ CREATE TABLE recording_identifier (
         ON DELETE CASCADE,
     FOREIGN KEY(source_id)
         REFERENCES source(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
     UNIQUE(source_id, identifier)
 );
 
