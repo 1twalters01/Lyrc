@@ -22,7 +22,8 @@ where
                         for index in selected_cues.iter().rev() {
                             cues.remove(*index);
                             if *index < cursor.cue_index {
-                                // cursor.cue_index = cursor.cue_index.saturating_sub(1);
+                                // cursor.cue_index =
+                                // cursor.cue_index.saturating_sub(1);
                                 let new_word_count =
                                     cues[cursor.cue_index.saturating_sub(1)].words.len();
 

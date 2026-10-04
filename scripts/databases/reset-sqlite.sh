@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,6 +12,7 @@ if [[ ! -f "$ROOT/Cargo.toml" ]]; then
     exit 1
 fi
 
-cd "$ROOT/python/aligner"
-
-uv run --env-file .env pytest -s
+cd "$ROOT"
+rm -f lyrc.db
+cargo sqlx database create
+cargo sqlx migrate run

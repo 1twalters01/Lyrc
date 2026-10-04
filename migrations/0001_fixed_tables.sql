@@ -38,7 +38,7 @@ CREATE TABLE language (
         CHECK (length(code_3) = 3)
 );
 
-INSERT INTO language (id, code) VALUES
+INSERT INTO language (id, code_3) VALUES
     (1, 'epo'),
     (2, 'eng'),
     (3, 'rus'),

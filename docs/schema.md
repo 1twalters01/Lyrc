@@ -5,11 +5,15 @@
 |                          | `name`                                          | TEXT        |                                                    |                          |
 | **Song**                 | `uuid`                                          | UUID        |                                                    | `0002_core_tables.sql`   |
 |                          | `title`                                         | TEXT        |                                                    |                          |
+| **Song Artist**          | `uuid`                                          | UUID        |                                                    | `0002_core_tables.sql`   |
+|                          | `song_uuid`                                     | Index(UUID) |                                                    |                          |
 |                          | `artist_uuid`                                   | UUID        |                                                    |                          |
 | **Recording**            | `uuid`                                          | UUID        |                                                    | `0002_core_tables.sql`   |
 |                          | `song_uuid`                                     | Index(UUID) |                                                    |                          |
-|                          | `artist_uuid`                                   | Index(UUID) | Could be a cover, so artist is needed here as well |                          |
 |                          | `duration_ms`                                   | INTEGER     |                                                    |                          |
+| **Recording Artist**     | `uuid`                                          | UUID        |                                                    | `0002_core_tables.sql`   |
+|                          | `recording_uuid`                                | Index(UUID) |                                                    |                          |
+|                          | `artist_uuid`                                   | Index(UUID) | Could be a cover, so artist is needed here as well |                          |
 | **Source**               | `id`                                            | INTEGER     |                                                    | `0001_fixed_tables.sql`  |
 |                          | `source`                                        | TEXT        | e.g. MusicBrainz or liblrc                         |                          |
 | **Recording Identifier** | `uuid`                                          | UUID        |                                                    | `0002_core_tables.sql`   |

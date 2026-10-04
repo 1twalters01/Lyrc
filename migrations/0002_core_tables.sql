@@ -1,13 +1,28 @@
 CREATE TABLE artist (
-    uuid BLOB PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    uuid BLOB PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL
 );
 
 CREATE TABLE song (
     uuid BLOB PRIMARY KEY,
     title TEXT NOT NULL,
     artist_uuid BLOB NOT NULL,
-    FOREIGN KEY(artist_uuid) REFERENCES artist(uuid)
+    FOREIGN KEY(artist_uuid)
+        REFERENCES artist(uuid)
+        ON DELETE CASCADE
+
+);
+
+CREATE TABLE song_artist (
+    song_uuid   BLOB NOT NULL,
+    artist_uuid BLOB NOT NULL,
+    PRIMARY KEY (song_uuid, artist_uuid),
+    FOREIGN KEY (song_uuid)
+        REFERENCES song(uuid)
+        ON DELETE CASCADE,
+    FOREIGN KEY (artist_uuid)
+        REFERENCES artist(uuid)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE recording (
@@ -15,8 +30,24 @@ CREATE TABLE recording (
     song_uuid BLOB NOT NULL,
     artist_uuid BLOB NOT NULL,
     duration_ms INTEGER NOT NULL,
-    FOREIGN KEY(song_uuid) REFERENCES song(uuid),
-    FOREIGN KEY(artist_uuid) REFERENCES artist(uuid)
+    FOREIGN KEY(song_uuid)
+        REFERENCES song(uuid)
+        ON DELETE CASCADE,
+    FOREIGN KEY(artist_uuid)
+        REFERENCES artist(uuid)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE recording_artist (
+    recording_uuid BLOB NOT NULL,
+    artist_uuid    BLOB NOT NULL,
+    PRIMARY KEY (recording_uuid, artist_uuid),
+    FOREIGN KEY (recording_uuid)
+        REFERENCES recording(uuid)
+        ON DELETE CASCADE,
+    FOREIGN KEY (artist_uuid)
+        REFERENCES artist(uuid)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE recording_identifier (
@@ -24,8 +55,12 @@ CREATE TABLE recording_identifier (
     recording_uuid BLOB NOT NULL,
     source_id INTEGER NOT NULL,
     identifier TEXT NOT NULL,
-    FOREIGN KEY(recording_uuid) REFERENCES recording(uuid),
-    FOREIGN KEY(source_id) REFERENCES source(id),
+    FOREIGN KEY(recording_uuid)
+        REFERENCES recording(uuid)
+        ON DELETE CASCADE,
+    FOREIGN KEY(source_id)
+        REFERENCES source(id)
+        ON DELETE CASCADE
     UNIQUE(source_id, identifier)
 );
 
