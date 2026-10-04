@@ -42,5 +42,5 @@ pub enum Modal {
         providers: Vec<DownloadService>,
         new_provider: DownloadService,
         error: Option<ModalError>,
-    }
+    },
 }

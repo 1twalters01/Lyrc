@@ -1,6 +1,9 @@
 use configuration::config::Config;
 
-use crate::{provider::LyricsDownloader, providers::{lrclib::LrclibProvider, musixmatch::MusixmatchProvider}};
+use crate::{
+    provider::LyricsDownloader,
+    providers::{lrclib::LrclibProvider, musixmatch::MusixmatchProvider},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DownloadService {
@@ -28,7 +31,6 @@ impl DownloadService {
     }
 
     pub fn get_providers(config: &Config) -> Vec<DownloadService> {
-        return Vec::from([Self::LibLrc, Self::Musixmatch])
+        return Vec::from([Self::LibLrc, Self::Musixmatch]);
     }
 }
-

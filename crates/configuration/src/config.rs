@@ -10,6 +10,8 @@ pub struct Config {
     pub backwards_cue_increment_large: Duration,
     pub forwards_cue_increment_small: Duration,
     pub backwards_cue_increment_small: Duration,
+    pub database_url: String,
+    pub max_connections: u32,
 }
 
 impl Default for Config {
@@ -24,6 +26,9 @@ impl Default for Config {
         let forwards_cue_increment_large = Duration::milliseconds(500);
         let backwards_cue_increment_large = Duration::milliseconds(500);
 
+        let database_url = String::new();
+        let max_connections = 5;
+
         Self {
             targets_in_priority_order,
             fps,
@@ -34,6 +39,8 @@ impl Default for Config {
             backwards_cue_increment_small,
             forwards_cue_increment_large,
             backwards_cue_increment_large,
+            database_url,
+            max_connections,
         }
     }
 }

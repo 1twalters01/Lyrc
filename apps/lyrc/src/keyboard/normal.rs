@@ -669,12 +669,9 @@ pub async fn handle_key<R: Renderer>(
                     ModalOption::Player,
                     ModalOption::Download,
                     ModalOption::Alignment,
-                    ModalOption::Translate
+                    ModalOption::Translate,
                 ]),
-                None => Vec::from([
-                    ModalOption::Player,
-                    ModalOption::Download,
-                ]),
+                None => Vec::from([ModalOption::Player, ModalOption::Download]),
             };
             app.state.modal = Some(Modal::Selection {
                 options,
