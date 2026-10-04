@@ -21,7 +21,7 @@ CREATE TABLE song_artist (
 );
 
 CREATE TABLE recording (
-    uuid BLOB PRIMARY KEY,
+    uuid BLOB PRIMARY KEY NOT NULL,
     song_uuid BLOB NOT NULL,
     duration_ms INTEGER NOT NULL,
     FOREIGN KEY(song_uuid)
@@ -42,7 +42,7 @@ CREATE TABLE recording_artist (
 );
 
 CREATE TABLE recording_identifier (
-    uuid BLOB PRIMARY KEY,
+    uuid BLOB PRIMARY KEY NOT NULL,
     recording_uuid BLOB NOT NULL,
     source_id INTEGER NOT NULL,
     identifier TEXT NOT NULL,

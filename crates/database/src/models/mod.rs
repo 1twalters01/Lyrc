@@ -5,6 +5,7 @@ pub mod lyrics_file;
 pub mod lyrics_format;
 pub mod lyrics_variant;
 pub mod recording;
+pub mod recording_artist;
 pub mod recording_identifier;
 pub mod song;
 pub mod song_artist;

@@ -148,7 +148,7 @@ impl SongRow {
         Ok(result.rows_affected() > 0)
     }
 
-    pub async fn uuid_exists(pool: &Pool<Sqlite>, uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn uuid_exists(pool: &Pool<Sqlite>, song_uuid: Uuid) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
             r#"
                 SELECT EXISTS(
@@ -157,14 +157,14 @@ impl SongRow {
                     WHERE uuid = ?
                 )
             "#,
-            uuid,
+            song_uuid,
         )
         .fetch_one(pool)
         .await
         .map(|exists| exists != 0)
     }
 
-    pub async fn title_exists(pool: &Pool<Sqlite>, title: &str) -> Result<bool, sqlx::Error> {
+    pub async fn title_exists(pool: &Pool<Sqlite>, song_title: &str) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
             r#"
                 SELECT EXISTS(
@@ -173,7 +173,7 @@ impl SongRow {
                     WHERE title = ?
                 )
             "#,
-            title,
+            song_title,
         )
         .fetch_one(pool)
         .await
