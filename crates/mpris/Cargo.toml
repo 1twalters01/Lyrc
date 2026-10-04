@@ -8,6 +8,7 @@ async-stream = "0.3.6"
 chrono = "0.4.45"
 futures-core = "0.3.32"
 futures-util = "0.3.32"
+lofty = "0.25.4"
 tokio = { version = "1.52.3", features = ["sync", "macros", "rt"] }
 url = "2.5.8"
 zbus = { version = "5.17.0", features = ["tokio"] }

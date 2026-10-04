@@ -16,8 +16,9 @@ CREATE TABLE source (
 );
 
 INSERT INTO source (id, source) VALUES
-    (1, 'musicbrainz'),
-    (2, 'liblrc');
+    (1, 'isrc'),
+    (2, 'musicbrainz'),
+    (3, 'liblrc');
 
 
 

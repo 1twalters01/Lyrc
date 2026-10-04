@@ -1,9 +1,14 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 use tokio::process::Command;
 
 use chrono::Duration;
 use url::Url;
 use zbus::zvariant::{ObjectPath, OwnedObjectPath, OwnedValue, Value};
+
+use lofty::{file::TaggedFileExt, read_from_path, tag::ItemKey};
 
 use crate::client::MprisClient;
 
@@ -19,6 +24,7 @@ pub struct Track {
     pub artists: Vec<String>,
     pub album_artists: Vec<String>,
     pub file_path: Option<PathBuf>,
+    pub isrc: Option<String>,
 }
 
 impl Track {
@@ -32,14 +38,15 @@ impl Track {
         let genres = get_string_array(&metadata, "xesam:genre");
         let artists = get_string_array(&metadata, "xesam:artist");
         let album_artists = get_string_array(&metadata, "xesam:albumArtist");
-
-        // println!("\n\n\n{:?}", metadata.get("xesam:albumArtist"));
-        // println!("\n{:?}", metadata.get("xesam:url"));
         let file_path = if mpris.get_player() == "cmus" {
             get_current_track_file_path_cmus().await.ok().flatten()
         } else {
             get_optional_pathbuf(&metadata, "xesam:url")
         };
+        let isrc = file_path
+            .as_ref()
+            .and_then(|file_path| get_isrc(&file_path).unwrap_or(None));
+        println!("\nisrc: {:?}", isrc);
 
         Track {
             album,
@@ -53,6 +60,7 @@ impl Track {
             album_artists,
 
             file_path,
+            isrc,
         }
     }
 
@@ -165,4 +173,16 @@ async fn get_current_track_file_path_cmus() -> Result<Option<PathBuf>, std::io::
     }
 
     Ok(None)
+}
+
+fn get_isrc(path: &Path) -> Result<Option<String>, lofty::error::FileParseError> {
+    let tagged_file = read_from_path(path)?;
+
+    let isrc = tagged_file
+        .tags()
+        .iter()
+        .find_map(|tag| tag.get_string(ItemKey::Isrc))
+        .map(str::to_owned);
+
+    Ok(isrc)
 }
