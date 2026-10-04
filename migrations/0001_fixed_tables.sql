@@ -34,8 +34,8 @@ INSERT INTO translation (id, name) VALUES
 
 CREATE TABLE language (
     id INTEGER PRIMARY KEY,
-    code TEXT NOT NULL UNIQUE
-        CHECK (length(code) = 3)
+    code_3 TEXT NOT NULL UNIQUE
+        CHECK (length(code_3) = 3)
 );
 
 INSERT INTO language (id, code) VALUES

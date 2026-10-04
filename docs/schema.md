@@ -20,8 +20,8 @@
 | **Translation**          | `id`                                            | INTEGER     |                                                    | `0001_fixed_tables.sql`  |
 |                          | `name`                                          | TEXT        | Original, Translated                               |                          |
 | **Language**             | `id`                                            | INTEGER     |                                                    | `0001_fixed_tables.sql`  |
-|                          | `code`                                          | TEXT        | ISO 639-3 code                                     |                          |
-| **Lyrics Variant**       | `id`                                            | INTEGER     |                                                    | `0003_file_tables.sql` |
+|                          | `code_3`                                        | TEXT        | ISO 639-3 code                                     |                          |
+| **Lyrics Variant**       | `id`                                            | INTEGER     |                                                    | `0003_file_tables.sql`    |
 |                          | `translation_id`                                | INTEGER     |                                                    |                          |
 |                          | `language_id`                                   | INTEGER     |                                                    |                          |
 |                          | `UNIQUE(translation_id, language_id)`           |             |                                                    |                          |

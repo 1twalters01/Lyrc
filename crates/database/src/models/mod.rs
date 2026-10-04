@@ -1,0 +1,11 @@
+pub mod artist;
+pub mod audio_file;
+pub mod language;
+pub mod lyrics_file;
+pub mod lyrics_format;
+pub mod lyrics_variant;
+pub mod recording;
+pub mod recording_identifier;
+pub mod song;
+pub mod source;
+pub mod translation;

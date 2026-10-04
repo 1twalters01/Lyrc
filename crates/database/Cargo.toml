@@ -5,5 +5,6 @@ edition = "2024"
 
 [dependencies]
 sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio", "uuid", "macros"] }
+uuid = { version = "1.24.1", features = ["v4", "fast-rng", "macro-diagnostics"] }
 
 configuration = { path = "../../crates/configuration/" }
