@@ -708,6 +708,7 @@ version = "0.1.0"
 dependencies = [
  "configuration",
  "sqlx",
+ "subtitles",
  "uuid",
 ]
 

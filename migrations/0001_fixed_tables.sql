@@ -1,5 +1,5 @@
 CREATE TABLE lyrics_format (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY NOT NULL,
     format TEXT NOT NULL UNIQUE
 );
 
@@ -11,7 +11,7 @@ INSERT INTO lyrics_format (id, format) VALUES
 
 
 CREATE TABLE source (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY NOT NULL,
     source TEXT NOT NULL UNIQUE
 );
 
@@ -22,7 +22,7 @@ INSERT INTO source (id, source) VALUES
 
 
 CREATE TABLE translation (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY NOT NULL,
     name TEXT NOT NULL UNIQUE
 );
 
@@ -33,7 +33,7 @@ INSERT INTO translation (id, name) VALUES
 
 
 CREATE TABLE language (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY NOT NULL,
     code_3 TEXT NOT NULL UNIQUE
         CHECK (length(code_3) = 3)
 );

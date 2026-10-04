@@ -1,5 +1,5 @@
 CREATE TABLE lyrics_variant (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY NOT NULL,
     translation_id INTEGER NOT NULL,
     language_id INTEGER NOT NULL,
     FOREIGN KEY(translation_id)
@@ -12,7 +12,7 @@ CREATE TABLE lyrics_variant (
 );
 
 CREATE TABLE lyrics_file (
-    uuid BLOB PRIMARY KEY,
+    uuid BLOB PRIMARY KEY NOT NULL,
     recording_uuid BLOB NOT NULL,
     variant_id INTEGER NOT NULL,
     format_id INTEGER NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE lyrics_file (
 );
 
 CREATE TABLE audio_file (
-    uuid BLOB PRIMARY KEY,
+    uuid BLOB PRIMARY KEY NOT NULL,
     recording_uuid BLOB NOT NULL,
     file_path TEXT NOT NULL UNIQUE,
     FOREIGN KEY(recording_uuid)
