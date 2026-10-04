@@ -7,5 +7,6 @@ pub mod lyrics_variant;
 pub mod recording;
 pub mod recording_identifier;
 pub mod song;
+pub mod song_artist;
 pub mod source;
 pub mod translation;

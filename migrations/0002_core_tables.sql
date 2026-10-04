@@ -4,13 +4,8 @@ CREATE TABLE artist (
 );
 
 CREATE TABLE song (
-    uuid BLOB PRIMARY KEY,
-    title TEXT NOT NULL,
-    artist_uuid BLOB NOT NULL,
-    FOREIGN KEY(artist_uuid)
-        REFERENCES artist(uuid)
-        ON DELETE CASCADE
-
+    uuid BLOB PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL
 );
 
 CREATE TABLE song_artist (
@@ -28,13 +23,9 @@ CREATE TABLE song_artist (
 CREATE TABLE recording (
     uuid BLOB PRIMARY KEY,
     song_uuid BLOB NOT NULL,
-    artist_uuid BLOB NOT NULL,
     duration_ms INTEGER NOT NULL,
     FOREIGN KEY(song_uuid)
         REFERENCES song(uuid)
-        ON DELETE CASCADE,
-    FOREIGN KEY(artist_uuid)
-        REFERENCES artist(uuid)
         ON DELETE CASCADE
 );
 
@@ -65,6 +56,5 @@ CREATE TABLE recording_identifier (
 );
 
 CREATE INDEX recording_song_idx ON recording(song_uuid);
-CREATE INDEX recording_artist_idx ON recording(artist_uuid);
 CREATE INDEX recording_identifier_recording_idx
     ON recording_identifier(recording_uuid);
