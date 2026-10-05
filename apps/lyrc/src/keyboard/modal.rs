@@ -1,4 +1,5 @@
-use std::str::FromStr;
+use core::{convert::From, fmt::Pointer};
+use std::{path::PathBuf, str::FromStr};
 
 use configuration::config::Config;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -31,6 +32,7 @@ pub async fn handle_key<R: Renderer>(
                     Some(_) => Vec::from([
                         ModalOption::Player,
                         ModalOption::Download,
+                        ModalOption::Save,
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
@@ -39,27 +41,31 @@ pub async fn handle_key<R: Renderer>(
                 app.state.modal = match new_modal {
                     ModalOption::Player => Some(Modal::Selection {
                         new_modal: if options.contains(&ModalOption::Alignment) {
-                            ModalOption::Alignment
+                            ModalOption::Translate
                         } else {
                             ModalOption::Download
                         },
                         options,
                     }),
                     ModalOption::Download => Some(Modal::Selection {
-                        options,
                         new_modal: ModalOption::Player,
+                        options,
                     }),
-                    ModalOption::Translate => Some(Modal::Selection {
-                        new_modal: if options.contains(&ModalOption::Download) {
-                            ModalOption::Download
+                    ModalOption::Save => Some(Modal::Selection {
+                        new_modal: ModalOption::Download,
+                        options,
+                    }),
+                    ModalOption::Alignment => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Translate) {
+                            ModalOption::Save
                         } else {
                             ModalOption::Player
                         },
                         options,
                     }),
-                    ModalOption::Alignment => Some(Modal::Selection {
-                        new_modal: if options.contains(&ModalOption::Translate) {
-                            ModalOption::Translate
+                    ModalOption::Translate => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Download) {
+                            ModalOption::Alignment
                         } else {
                             ModalOption::Player
                         },
@@ -72,6 +78,7 @@ pub async fn handle_key<R: Renderer>(
                     Some(_) => Vec::from([
                         ModalOption::Player,
                         ModalOption::Download,
+                        ModalOption::Save,
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
@@ -84,13 +91,13 @@ pub async fn handle_key<R: Renderer>(
                     }),
                     ModalOption::Download => Some(Modal::Selection {
                         new_modal: if options.contains(&ModalOption::Translate) {
-                            ModalOption::Translate
+                            ModalOption::Save
                         } else {
                             ModalOption::Player
                         },
                         options,
                     }),
-                    ModalOption::Translate => Some(Modal::Selection {
+                    ModalOption::Save => Some(Modal::Selection {
                         new_modal: if options.contains(&ModalOption::Alignment) {
                             ModalOption::Alignment
                         } else {
@@ -99,8 +106,16 @@ pub async fn handle_key<R: Renderer>(
                         options,
                     }),
                     ModalOption::Alignment => Some(Modal::Selection {
+                        new_modal: if options.contains(&ModalOption::Translate) {
+                            ModalOption::Translate
+                        } else {
+                            ModalOption::Player
+                        },
                         options,
+                    }),
+                    ModalOption::Translate => Some(Modal::Selection {
                         new_modal: ModalOption::Player,
+                        options,
                     }),
                 }
             }
@@ -120,11 +135,22 @@ pub async fn handle_key<R: Renderer>(
                         error: None,
                     })
                 }
-                ModalOption::Translate => {
-                    app.state.modal = Some(Modal::Translate {
-                        input: String::new(),
-                        input_variant: None,
-                        new_variant: None,
+                ModalOption::Save => {
+                    let input = match app.state.subtitle_documents.active() {
+                        Some(state) => match &state.document.metadata.file_path {
+                            Some(path) => path
+                                .clone()
+                                .into_os_string()
+                                .into_string()
+                                .unwrap_or(String::new()),
+                            None => String::new(),
+                        },
+                        None => String::new(),
+                    };
+
+                    app.state.modal = Some(Modal::Save {
+                        column: input.len().saturating_sub(1),
+                        input,
                         error: None,
                     })
                 }
@@ -136,6 +162,14 @@ pub async fn handle_key<R: Renderer>(
                             .active()
                             .map(|state| state.document.sync_level())
                             .unwrap_or(SyncLevel::None),
+                        error: None,
+                    })
+                }
+                ModalOption::Translate => {
+                    app.state.modal = Some(Modal::Translate {
+                        input: String::new(),
+                        input_variant: None,
+                        new_variant: None,
                         error: None,
                     })
                 }
@@ -154,6 +188,7 @@ pub async fn handle_key<R: Renderer>(
                     Some(_) => Vec::from([
                         ModalOption::Player,
                         ModalOption::Download,
+                        ModalOption::Save,
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
@@ -227,6 +262,7 @@ pub async fn handle_key<R: Renderer>(
                     Some(_) => Vec::from([
                         ModalOption::Player,
                         ModalOption::Download,
+                        ModalOption::Save,
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
@@ -308,6 +344,142 @@ pub async fn handle_key<R: Renderer>(
 
             _ => {}
         },
+        Modal::Save {
+            mut input,
+            mut column,
+            mut error,
+        } => match key.code {
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Esc => {
+                let options = match app.state.subtitle_documents.active() {
+                    Some(_) => Vec::from([
+                        ModalOption::Player,
+                        ModalOption::Download,
+                        ModalOption::Save,
+                        ModalOption::Alignment,
+                        ModalOption::Translate,
+                    ]),
+                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                };
+                app.state.modal = Some(Modal::Selection {
+                    new_modal: if options.contains(&ModalOption::Translate) {
+                        ModalOption::Translate
+                    } else {
+                        ModalOption::Player
+                    },
+                    options,
+                });
+            }
+
+            KeyCode::Left => {
+                app.state.modal = Some(Modal::Save {
+                    column: column.saturating_sub(1),
+                    input,
+                    error,
+                })
+            }
+            KeyCode::Right => {
+                app.state.modal = Some(Modal::Save {
+                    column: std::cmp::min(column + 1, input.chars().count()),
+                    input,
+                    error,
+                })
+            }
+            KeyCode::End => {
+                app.state.modal = Some(Modal::Save {
+                    column: input.chars().count(),
+                    input,
+                    error,
+                })
+            }
+            KeyCode::Home => {
+                app.state.modal = Some(Modal::Save {
+                    column: 0,
+                    input,
+                    error,
+                })
+            }
+
+            KeyCode::Char('u') if key.modifiers == KeyModifiers::CONTROL => {
+                app.state.modal = Some(Modal::Save {
+                    column: 0,
+                    input: String::new(),
+                    error,
+                });
+            }
+            KeyCode::Backspace => {
+                (input, column) = if column > 0 {
+                    let byte_index = input
+                        .char_indices()
+                        .nth(column - 1)
+                        .map(|(index, _)| index)
+                        .unwrap();
+
+                    input.remove(byte_index);
+                    column -= 1;
+
+                    (input, column)
+                } else {
+                    (input, column)
+                };
+
+                app.state.modal = Some(Modal::Save {
+                    column,
+                    input,
+                    error,
+                });
+            }
+            KeyCode::Delete => {
+                input = if column < input.chars().count() {
+                    let byte_index = input
+                        .char_indices()
+                        .nth(column)
+                        .map(|(index, _)| index)
+                        .unwrap();
+
+                    input.remove(byte_index);
+
+                    input
+                } else {
+                    input
+                };
+
+                app.state.modal = Some(Modal::Save {
+                    column,
+                    input,
+                    error,
+                });
+            }
+
+            KeyCode::Char(char) => {
+                let byte_index = input
+                    .char_indices()
+                    .nth(column)
+                    .map(|(index, _)| index)
+                    .unwrap_or(input.len());
+
+                input.insert(byte_index, char);
+                column += 1;
+
+                app.state.modal = Some(Modal::Save {
+                    column,
+                    input,
+                    error,
+                });
+            }
+            KeyCode::Enter => {
+                let path = PathBuf::from(&input);
+
+                match app.state.subtitle_documents.active_mut() {
+                    Some(document_state) => {
+                        document_state.document.metadata.file_path = Some(path);
+                    }
+                    None => {}
+                }
+            }
+
+            _ => {}
+        },
         Modal::Translate {
             mut input,
             mut input_variant,
@@ -320,6 +492,7 @@ pub async fn handle_key<R: Renderer>(
                     Some(_) => Vec::from([
                         ModalOption::Player,
                         ModalOption::Download,
+                        ModalOption::Save,
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
@@ -410,6 +583,7 @@ pub async fn handle_key<R: Renderer>(
                     Some(_) => Vec::from([
                         ModalOption::Player,
                         ModalOption::Download,
+                        ModalOption::Save,
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),

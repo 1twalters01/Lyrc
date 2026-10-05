@@ -32,7 +32,7 @@
 - [ ] Can save and reload lyrics correctly
     - [x] Can save subtitles
     - [x] Can reload subtitles
-    - [ ] Can choose where and how to save subtitles
+    - [x] Can choose where and how to save subtitles
     - [ ] Save where the file was saved in a db and retrieve based on the track
 - [x] Can edit lyrics
     - [x] Can edit lyrics of untimed lines

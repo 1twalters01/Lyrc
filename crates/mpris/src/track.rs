@@ -46,7 +46,7 @@ impl Track {
         let isrc = file_path
             .as_ref()
             .and_then(|file_path| get_isrc(&file_path).unwrap_or(None));
-        println!("\nisrc: {:?}", isrc);
+        // println!("\nisrc: {:?}", isrc);
 
         Track {
             album,

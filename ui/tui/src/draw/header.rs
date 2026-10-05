@@ -38,6 +38,16 @@ pub fn draw_header(frame: &mut Frame, area: Rect, state: &AppState, position: Op
         if document_state.unsaved_changes {
             header.push_str("\nunsaved changes");
         }
+        // header.push_str(&format!(
+        //     "\nsubtitle path: {:?}",
+        //     document_state
+        //         .document
+        //         .metadata
+        //         .file_path
+        //         .clone()
+        //         .map(|path| path.into_os_string().into_string().unwrap())
+        //         .unwrap_or(String::new())
+        // ));
     }
 
     frame.render_widget(Paragraph::new(header), area);

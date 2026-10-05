@@ -37,6 +37,17 @@ impl SelectCursor {
         self.target_word_index = self.active_word_index;
     }
 
+    pub fn end(&mut self, word_count: Option<usize>) {
+        self.active_word_index = word_count.map(|c| c.saturating_sub(1));
+    }
+
+    pub fn home(&mut self) {
+        self.active_word_index = match self.active_word_index {
+            Some(_) => Some(0),
+            None => None,
+        };
+    }
+
     pub fn move_up(&mut self, new_word_count: Option<usize>) {
         self.cue_index = self.cue_index.saturating_sub(1);
         self.active_word_index = min(
@@ -87,6 +98,14 @@ impl EditCursor {
     pub fn move_right(&mut self, line_length: usize) {
         self.active_column = min(self.active_column + 1, line_length);
         self.target_column = self.active_column;
+    }
+
+    pub fn end(&mut self, line_length: usize) {
+        self.active_column = line_length;
+    }
+
+    pub fn home(&mut self) {
+        self.active_column = 0;
     }
 
     pub fn move_up(&mut self, new_line_length: usize) {

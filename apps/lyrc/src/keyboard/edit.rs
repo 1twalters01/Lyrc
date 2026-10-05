@@ -90,6 +90,20 @@ pub async fn handle_key<R: Renderer>(
             } => cursor.move_right(document_state.document.cues.cue_len(cursor.cue_index)),
             _ => {}
         },
+        KeyCode::End => match &mut app.state.app_mode {
+            AppMode::Edit {
+                cursor,
+                selected_cues: _,
+            } => cursor.end(document_state.document.cues.cue_len(cursor.cue_index)),
+            _ => {}
+        },
+        KeyCode::Home => match &mut app.state.app_mode {
+            AppMode::Edit {
+                cursor,
+                selected_cues: _,
+            } => cursor.home(),
+            _ => {}
+        },
         KeyCode::Up => match &mut app.state.app_mode {
             AppMode::Edit {
                 cursor,

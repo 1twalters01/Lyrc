@@ -7,6 +7,7 @@ use crate::state::SubtitleVariant;
 pub enum ModalOption {
     Player,
     Download,
+    Save,
     Translate,
     Alignment,
 }
@@ -28,19 +29,24 @@ pub enum Modal {
         new_player: Option<String>,
         error: Option<ModalError>,
     },
-    Translate {
+    Download {
+        providers: Vec<DownloadService>,
+        new_provider: DownloadService,
+        error: Option<ModalError>,
+    },
+    Save {
+        column: usize,
         input: String,
-        input_variant: Option<SubtitleVariant>,
-        new_variant: Option<SubtitleVariant>,
         error: Option<ModalError>,
     },
     Alignment {
         new_alignment: SyncLevel,
         error: Option<ModalError>,
     },
-    Download {
-        providers: Vec<DownloadService>,
-        new_provider: DownloadService,
+    Translate {
+        input: String,
+        input_variant: Option<SubtitleVariant>,
+        new_variant: Option<SubtitleVariant>,
         error: Option<ModalError>,
     },
 }

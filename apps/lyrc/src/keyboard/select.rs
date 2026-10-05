@@ -1,3 +1,5 @@
+use core::option::Option::None;
+
 use configuration::config::Config;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use lyrc_core::{
@@ -114,6 +116,29 @@ pub async fn handle_key<R: Renderer>(
             }
             _ => {}
         },
+        KeyCode::End => match &mut app.state.app_mode {
+            AppMode::Select {
+                cursor,
+                selected_cues: _,
+            } => {
+                if document_state.document.sync_level() >= SyncLevel::Word {
+                    cursor.end(document_state.document.cues.word_count(cursor.cue_index))
+                }
+            }
+            _ => {}
+        },
+        KeyCode::Home => match &mut app.state.app_mode {
+            AppMode::Select {
+                cursor,
+                selected_cues: _,
+            } => {
+                if document_state.document.sync_level() >= SyncLevel::Word {
+                    cursor.home()
+                }
+            }
+            _ => {}
+        },
+
         KeyCode::Char('H') => app.toggle_select_all_lines()?,
         KeyCode::Char('h') => app.toggle_select_line(),
 

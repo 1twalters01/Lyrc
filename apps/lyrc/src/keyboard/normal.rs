@@ -668,6 +668,7 @@ pub async fn handle_key<R: Renderer>(
                 Some(_) => Vec::from([
                     ModalOption::Player,
                     ModalOption::Download,
+                    ModalOption::Save,
                     ModalOption::Alignment,
                     ModalOption::Translate,
                 ]),
