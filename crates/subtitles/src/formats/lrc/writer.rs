@@ -15,6 +15,7 @@ impl SubtitleWriter for LrcWriter {
         let mut file = String::new();
 
         Self::write_metadata(&subtitle_document.metadata, &mut file);
+        file.push_str("\n");
         Self::write_cues(subtitle_document, &mut file)?;
         // file.trim();
 
@@ -70,7 +71,7 @@ impl LrcWriter {
                 .map(|cue| {
                     let start_time = Self::format_timestamp(cue.start);
                     let text = cue.content.clone();
-                    format!("[{}]{}\n", start_time, text)
+                    format!("[{}]{}", start_time, text)
                 })
                 .collect::<Vec<String>>()
                 .join("\n"),

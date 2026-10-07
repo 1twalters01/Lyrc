@@ -1,15 +1,21 @@
-use sqlx::{Pool, sqlite::Sqlite};
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SongRow {
     pub uuid: Uuid,
     pub title: String,
 }
 
 impl SongRow {
+    pub fn from_title(song_title: &str) -> Self {
+        SongRow {
+            uuid: Uuid::new_v4(),
+            title: song_title.to_string(),
+        }
+    }
+
     pub async fn select_by_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         song_uuid: Uuid,
     ) -> Result<Option<SongRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -23,12 +29,12 @@ impl SongRow {
             "#,
             song_uuid,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
     pub async fn select_by_title(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         song_title: &str,
     ) -> Result<Vec<SongRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -42,12 +48,12 @@ impl SongRow {
             "#,
             song_title,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_artist_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         artist_uuid: Uuid,
     ) -> Result<Vec<SongRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -63,12 +69,12 @@ impl SongRow {
             "#,
             artist_uuid,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_recording_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
     ) -> Result<Option<SongRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -84,11 +90,14 @@ impl SongRow {
             "#,
             recording_uuid
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
-    pub async fn insert(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn insert(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO song (uuid, title)
@@ -97,14 +106,40 @@ impl SongRow {
             self.uuid,
             self.title,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
     }
 
+    pub async fn get_or_create_by_titles(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        titles: &[String],
+    ) -> Result<Vec<SongRow>, sqlx::Error> {
+        let mut songs = Vec::with_capacity(titles.len());
+
+        for title in titles {
+            let song = match Self::select_by_title(tx, title).await?.first() {
+                Some(song) => song.clone(),
+                None => {
+                    let song = SongRow {
+                        uuid: Uuid::new_v4(),
+                        title: title.to_string(),
+                    };
+
+                    song.insert(tx).await?;
+                    song
+                }
+            };
+
+            songs.push(song);
+        }
+
+        Ok(songs)
+    }
+
     pub async fn update_title(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         song_uuid: Uuid,
         new_song_title: &str,
     ) -> Result<(), sqlx::Error> {
@@ -117,7 +152,7 @@ impl SongRow {
             new_song_title,
             song_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
@@ -125,16 +160,19 @@ impl SongRow {
 
     pub async fn set_title(
         &mut self,
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         song_title: &str,
     ) -> Result<(), sqlx::Error> {
-        Self::update_title(pool, self.uuid, song_title).await?;
+        Self::update_title(tx, self.uuid, song_title).await?;
         self.title = song_title.to_owned();
 
         Ok(())
     }
 
-    pub async fn delete(pool: &Pool<Sqlite>, song_uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn delete(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        song_uuid: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"
                 DELETE FROM song
@@ -142,13 +180,16 @@ impl SongRow {
             "#,
             song_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(result.rows_affected() > 0)
     }
 
-    pub async fn uuid_exists(pool: &Pool<Sqlite>, song_uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn uuid_exists(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        song_uuid: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
             r#"
                 SELECT EXISTS(
@@ -159,12 +200,15 @@ impl SongRow {
             "#,
             song_uuid,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }
 
-    pub async fn title_exists(pool: &Pool<Sqlite>, song_title: &str) -> Result<bool, sqlx::Error> {
+    pub async fn title_exists(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        song_title: &str,
+    ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
             r#"
                 SELECT EXISTS(
@@ -175,7 +219,7 @@ impl SongRow {
             "#,
             song_title,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }

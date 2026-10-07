@@ -26,7 +26,7 @@ impl Default for Config {
         let forwards_cue_increment_large = Duration::milliseconds(500);
         let backwards_cue_increment_large = Duration::milliseconds(500);
 
-        let database_url = String::new();
+        let database_url = String::from("lyrc.db");
         let max_connections = 5;
 
         Self {

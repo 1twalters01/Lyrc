@@ -7,6 +7,7 @@ use crate::{
 };
 
 use configuration::config::Config;
+use database::service::DatabaseService;
 use gui::renderer::GuiRenderer;
 use lyrc_core::app::App;
 use mpris::client::MprisClient;
@@ -18,12 +19,14 @@ use futures_util::stream::StreamExt;
 pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut workers = Workers::start().await?;
     let player = &MprisClient::choose_player(&config.targets_in_priority_order).await?;
+    let database_service = DatabaseService::new(&config).await?;
 
     let cue_synchronizer = CueSynchronizer::new();
     let word_synchronizer = WordSynchronizer::new();
 
     let mut app = App::new(
         GuiRenderer::new()?,
+        database_service,
         player,
         workers.alignment.request_tx,
         workers.translation.request_tx,

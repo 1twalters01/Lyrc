@@ -2,6 +2,7 @@ use core::option::Option::None;
 
 use configuration::config::Config;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use database::repositories::subtitle_document::SubtitleDocumentRepository;
 use lyrc_core::{
     app::App,
     history::{CueTimeChange, Edit, IndexedSubtitleCue},
@@ -44,6 +45,13 @@ pub async fn handle_key<R: Renderer>(
         // Save
         KeyCode::Char('s') if key.modifiers == KeyModifiers::CONTROL => {
             document_state.document.save()?;
+
+            let pool = app.database_service.get_pool();
+            let subtitle_document_repository = SubtitleDocumentRepository::new(&pool);
+            subtitle_document_repository
+                .save(&document_state.document)
+                .await?;
+
             document_state.unsaved_changes = false;
             app.state.reload_subtitle_documents().await;
             if let Some(active_variant) = app.state.subtitle_documents.active_variant() {

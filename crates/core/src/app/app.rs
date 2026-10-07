@@ -1,5 +1,6 @@
 use aligner::messages::AlignmentRequest;
 use configuration::config::Config;
+use database::service::DatabaseService;
 use mpris::client::MprisClient;
 use tokio::sync::mpsc::Sender;
 use translator::messages::TranslationRequest;
@@ -13,6 +14,7 @@ where
     R: Renderer,
 {
     pub renderer: R,
+    pub database_service: DatabaseService,
     pub synchronizer: AppSynchronizer,
     pub clock: PlaybackClock,
     pub state: AppState,
@@ -27,6 +29,7 @@ where
 {
     pub async fn new(
         renderer: R,
+        database_service: DatabaseService,
         player: &str,
         alignment_req_tx: Sender<AlignmentRequest>,
         translation_req_tx: Sender<TranslationRequest>,
@@ -39,6 +42,7 @@ where
 
         let mut app = Self {
             renderer,
+            database_service,
             clock,
             state,
             synchronizer,

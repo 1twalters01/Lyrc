@@ -1,15 +1,21 @@
-use sqlx::{Pool, sqlite::Sqlite};
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ArtistRow {
     pub uuid: Uuid,
     pub name: String,
 }
 
 impl ArtistRow {
+    pub fn from_name(artist_name: &str) -> Self {
+        ArtistRow {
+            uuid: Uuid::new_v4(),
+            name: artist_name.to_string(),
+        }
+    }
+
     pub async fn select_by_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         artist_uuid: Uuid,
     ) -> Result<Option<ArtistRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -23,12 +29,12 @@ impl ArtistRow {
             "#,
             artist_uuid,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
     pub async fn select_by_name(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         artist_name: &str,
     ) -> Result<Vec<ArtistRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -42,12 +48,12 @@ impl ArtistRow {
             "#,
             artist_name,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_song_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         song_uuid: Uuid,
     ) -> Result<Vec<ArtistRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -63,12 +69,12 @@ impl ArtistRow {
             "#,
             song_uuid
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_recording_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
     ) -> Result<Vec<ArtistRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -84,11 +90,14 @@ impl ArtistRow {
             "#,
             recording_uuid
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
-    pub async fn insert(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn insert(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO artist (uuid, name)
@@ -97,14 +106,36 @@ impl ArtistRow {
             self.uuid,
             self.name,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
     }
 
+    pub async fn get_or_create_by_names(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        names: &[String],
+    ) -> Result<Vec<ArtistRow>, sqlx::Error> {
+        let mut artists = Vec::with_capacity(names.len());
+
+        for name in names {
+            let artist = match Self::select_by_name(tx, name).await?.first() {
+                Some(artist) => artist.clone(),
+                None => {
+                    let artist = ArtistRow::from_name(name);
+                    artist.insert(tx).await?;
+                    artist
+                }
+            };
+
+            artists.push(artist);
+        }
+
+        Ok(artists)
+    }
+
     pub async fn update_name(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         artist_uuid: Uuid,
         new_artist_name: &str,
     ) -> Result<(), sqlx::Error> {
@@ -117,7 +148,7 @@ impl ArtistRow {
             new_artist_name,
             artist_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
@@ -125,16 +156,19 @@ impl ArtistRow {
 
     pub async fn set_name(
         &mut self,
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         artist_name: &str,
     ) -> Result<(), sqlx::Error> {
-        Self::update_name(pool, self.uuid, &artist_name).await?;
+        Self::update_name(tx, self.uuid, &artist_name).await?;
         self.name = artist_name.to_owned();
 
         Ok(())
     }
 
-    pub async fn delete(pool: &Pool<Sqlite>, artist_uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn delete(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        artist_uuid: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"
                 Delete FROM artist
@@ -142,13 +176,16 @@ impl ArtistRow {
             "#,
             artist_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(result.rows_affected() > 0)
     }
 
-    pub async fn uuid_exists(pool: &Pool<Sqlite>, artist_uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn uuid_exists(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        artist_uuid: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
             r#"
             SELECT EXISTS(
@@ -159,12 +196,15 @@ impl ArtistRow {
         "#,
             artist_uuid,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }
 
-    pub async fn name_exists(pool: &Pool<Sqlite>, artist_name: &str) -> Result<bool, sqlx::Error> {
+    pub async fn name_exists(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        artist_name: &str,
+    ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
             r#"
             SELECT EXISTS(
@@ -175,7 +215,7 @@ impl ArtistRow {
         "#,
             artist_name,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }

@@ -10,6 +10,7 @@ uuid = { version = "1.24.1", features = ["v4", "fast-rng", "macro-diagnostics"] 
 zbus = { version = "5.17.0", features = ["tokio"] }
 
 configuration = { path = "../../crates/configuration/" }
+database = { path = "../../crates/database/" }
 translator = { path = "../translator/" }
 aligner = { path = "../aligner/" }
 downloader = { path = "../downloader/" }

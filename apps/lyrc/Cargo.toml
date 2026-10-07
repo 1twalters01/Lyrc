@@ -21,4 +21,5 @@ synchronizer = { path = "../../crates/synchronizer/" }
 downloader = { path = "../../crates/downloader/" }
 aligner = { path = "../../crates/aligner/" }
 translator = { path = "../../crates/translator/" }
+database = { path = "../../crates/database/" }
 tui = { path = "../../ui/tui/" }

@@ -317,6 +317,12 @@ pub async fn handle_key<R: Renderer>(
                                         }
                                         let mut document = LrcParser.parse(&lyrics.content)?;
                                         document.metadata.file_path = document_path;
+                                        if document.metadata.artists.is_empty() {
+                                            document.metadata.artists.extend(track.artists);
+                                        }
+                                        if document.metadata.title.is_none() {
+                                            document.metadata.title = Some(track.title);
+                                        }
 
                                         Some(document)
                                     }
