@@ -49,9 +49,11 @@ pub async fn handle_key<R: Renderer>(
                         && document_state.document.metadata.title.is_some()
                         && !document_state.document.metadata.artists.is_empty()
                     {
-                        subtitle_document_repository
-                            .save(&document_state.document, track.duration, variant)
+                        if let Some(ref track_file_path) = track.file_path {
+                            subtitle_document_repository
+                                .save(&document_state.document, track.duration, variant, track_file_path)
                             .await?;
+                        }
                     }
 
                     document_state.unsaved_changes = false;

@@ -1,10 +1,11 @@
+use std::path::PathBuf;
+
 use chrono::Duration;
 use sqlx::{Pool, Sqlite};
-use subtitles::subtitles::{SubtitleDocument, SyncLevel};
+use subtitles::subtitles::SubtitleDocument;
 
 use database::models::{
-    artist::ArtistRow, lookup, lyrics_file::LyricsFileRow, lyrics_variant::LyricsVariantRow,
-    recording::RecordingRow, song::SongRow, song_artist::SongArtistRow,
+    artist::ArtistRow, audio_file::AudioFileRow, lookup, lyrics_file::LyricsFileRow, lyrics_variant::LyricsVariantRow, recording::RecordingRow, recording_artist::RecordingArtistRow, song::SongRow, song_artist::SongArtistRow,
 };
 
 use crate::state::SubtitleVariant;
@@ -23,6 +24,7 @@ impl<'a> SubtitleDocumentRepository<'a> {
         document: &SubtitleDocument,
         track_duration: Duration,
         variant: SubtitleVariant,
+        audio_file_path: &PathBuf,
     ) -> Result<(), sqlx::Error> {
         let mut tx = self.pool.begin().await?;
 
@@ -65,6 +67,24 @@ impl<'a> SubtitleDocumentRepository<'a> {
                 recording_row
             }
         };
+
+        let recording_artist_row = match RecordingArtistRow::select_by_uuids(&mut tx, recording_row.uuid, artist_row.uuid).await? {
+            Some(row) => row,
+            None => {
+                let row = RecordingArtistRow {
+                    recording_uuid: recording_row.uuid,
+                    artist_uuid: artist_row.uuid,
+                };
+
+                row.insert(&mut tx).await?;
+
+                row
+            },
+        };
+
+        // Get relevant Source IDs
+        
+        // Try to insert to Recording Identifier
 
         // Get lyrics Variant
         let translation = match variant {
@@ -125,6 +145,19 @@ impl<'a> SubtitleDocumentRepository<'a> {
         println!("lyrics_file_row: {:?}", lyrics_file_row);
 
         // Need to save audio file too so that loading from a given audiofile works
+        let audio_file_path_string = audio_file_path.to_string_lossy().to_string();
+        let audio_file_row = match AudioFileRow::select_by_file_path(&mut tx, &audio_file_path_string).await? {
+            Some(audio_file_row) => audio_file_row,
+            None => {
+                let audio_file_row = AudioFileRow {
+                    uuid: uuid::Uuid::new_v4(),
+                    recording_uuid: recording_row.uuid,
+                    file_path: audio_file_path_string,
+                };
+                audio_file_row.insert(&mut tx).await?;
+                audio_file_row
+            }
+        };
 
         tx.commit().await?;
         Ok(())

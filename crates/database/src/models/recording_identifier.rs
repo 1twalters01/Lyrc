@@ -1,4 +1,3 @@
-use sqlx::{Pool, sqlite::Sqlite};
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::FromRow)]
@@ -11,7 +10,7 @@ pub struct RecordingIdentifierRow {
 
 impl RecordingIdentifierRow {
     pub async fn select_by_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_identifier_uuid: Uuid,
     ) -> Result<Option<RecordingIdentifierRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -27,12 +26,12 @@ impl RecordingIdentifierRow {
             "#,
             recording_identifier_uuid,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
     pub async fn select_by_recording_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
     ) -> Result<Vec<RecordingIdentifierRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -48,12 +47,12 @@ impl RecordingIdentifierRow {
             "#,
             recording_uuid,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_source_id(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         source_id: i64,
     ) -> Result<Vec<RecordingIdentifierRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -69,12 +68,12 @@ impl RecordingIdentifierRow {
             "#,
             source_id,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_identifier(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         source_id: i64,
         identifier: &str,
     ) -> Result<Option<RecordingIdentifierRow>, sqlx::Error> {
@@ -93,11 +92,14 @@ impl RecordingIdentifierRow {
             source_id,
             identifier,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
-    pub async fn insert(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn insert(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO recording_identifier (
@@ -113,14 +115,14 @@ impl RecordingIdentifierRow {
             self.source_id,
             self.identifier,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
     }
 
     pub async fn delete(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_identifier_uuid: Uuid,
     ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
@@ -130,14 +132,14 @@ impl RecordingIdentifierRow {
             "#,
             recording_identifier_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(result.rows_affected() > 0)
     }
 
     pub async fn uuid_exists(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_identifier_uuid: Uuid,
     ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
@@ -150,13 +152,13 @@ impl RecordingIdentifierRow {
             "#,
             recording_identifier_uuid,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }
 
     pub async fn exists(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         source_id: i64,
         identifier: &str,
     ) -> Result<bool, sqlx::Error> {
@@ -172,7 +174,7 @@ impl RecordingIdentifierRow {
             source_id,
             identifier,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }
