@@ -26,7 +26,7 @@ impl LyricsVariantRow {
     }
 
     pub async fn select(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         translation_id: i64,
         language_id: i64,
     ) -> Result<Option<Self>, sqlx::Error> {
@@ -44,7 +44,7 @@ impl LyricsVariantRow {
             translation_id,
             language_id,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
@@ -88,7 +88,7 @@ impl LyricsVariantRow {
         .await
     }
 
-    pub async fn insert(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn insert_force(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO lyrics_variant (
@@ -106,6 +106,27 @@ impl LyricsVariantRow {
         .await?;
 
         Ok(())
+    }
+
+    pub async fn insert(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<i64, sqlx::Error> {
+        let res = sqlx::query!(
+            r#"
+                INSERT INTO lyrics_variant (
+                    translation_id,
+                    language_id
+                )
+                VALUES (?, ?)
+            "#,
+            self.translation_id,
+            self.language_id,
+        )
+        .execute(&mut **tx)
+        .await?;
+
+        Ok(res.last_insert_rowid())
     }
 
     pub async fn delete(pool: &Pool<Sqlite>, id: i64) -> Result<bool, sqlx::Error> {

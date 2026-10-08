@@ -21,6 +21,14 @@ pub enum SyncLevel {
 }
 
 impl SyncLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SyncLevel::Phoneme => todo!(),
+            SyncLevel::Word => "elrc",
+            SyncLevel::Cue => "lrc",
+            SyncLevel::None => "txt",
+        }
+    }
     pub fn next(&self) -> Self {
         match self {
             Self::Phoneme => Self::Phoneme,

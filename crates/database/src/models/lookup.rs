@@ -1,8 +1,7 @@
-use sqlx::{Pool, sqlite::Sqlite};
 use subtitles::language::Language;
 
 pub async fn get_id_by_lyrics_format(
-    pool: &Pool<Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     format: &str,
 ) -> Result<Option<i64>, sqlx::Error> {
     sqlx::query_scalar!(
@@ -13,12 +12,12 @@ pub async fn get_id_by_lyrics_format(
         "#,
         format,
     )
-    .fetch_optional(pool)
+    .fetch_optional(&mut **tx)
     .await
 }
 
 pub async fn get_id_by_source(
-    pool: &Pool<Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     source: &str,
 ) -> Result<Option<i64>, sqlx::Error> {
     sqlx::query_scalar!(
@@ -29,12 +28,12 @@ pub async fn get_id_by_source(
         "#,
         source,
     )
-    .fetch_optional(pool)
+    .fetch_optional(&mut **tx)
     .await
 }
 
 pub async fn get_id_by_translation(
-    pool: &Pool<Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     name: &str,
 ) -> Result<Option<i64>, sqlx::Error> {
     sqlx::query_scalar!(
@@ -45,12 +44,12 @@ pub async fn get_id_by_translation(
         "#,
         name,
     )
-    .fetch_optional(pool)
+    .fetch_optional(&mut **tx)
     .await
 }
 
 pub async fn get_id_by_language_code(
-    pool: &Pool<Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     code_3: &str,
 ) -> Result<Option<i64>, sqlx::Error> {
     sqlx::query_scalar!(
@@ -61,12 +60,12 @@ pub async fn get_id_by_language_code(
         "#,
         code_3,
     )
-    .fetch_optional(pool)
+    .fetch_optional(&mut **tx)
     .await
 }
 
 pub async fn get_id_by_language(
-    pool: &Pool<Sqlite>,
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     language: &Language,
 ) -> Result<Option<i64>, sqlx::Error> {
     let code_3 = language.as_code_3();
@@ -78,6 +77,6 @@ pub async fn get_id_by_language(
         "#,
         code_3,
     )
-    .fetch_optional(pool)
+    .fetch_optional(&mut **tx)
     .await
 }

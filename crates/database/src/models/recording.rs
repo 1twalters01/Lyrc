@@ -1,7 +1,6 @@
-use sqlx::{Pool, sqlite::Sqlite};
 use uuid::Uuid;
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, Clone)]
 pub struct RecordingRow {
     pub uuid: Uuid,
     pub song_uuid: Uuid,
@@ -10,7 +9,7 @@ pub struct RecordingRow {
 
 impl RecordingRow {
     pub async fn select_by_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
     ) -> Result<Option<RecordingRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -25,12 +24,12 @@ impl RecordingRow {
             "#,
             recording_uuid,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
     pub async fn select_by_song_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         song_uuid: Uuid,
     ) -> Result<Vec<RecordingRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -45,12 +44,12 @@ impl RecordingRow {
             "#,
             song_uuid,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_recording_artist_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_artist_uuid: Uuid,
     ) -> Result<Vec<RecordingRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -67,12 +66,12 @@ impl RecordingRow {
             "#,
             recording_artist_uuid,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_song_artist_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         song_artist_uuid: Uuid,
     ) -> Result<Vec<RecordingRow>, sqlx::Error> {
         sqlx::query_as!(
@@ -89,11 +88,14 @@ impl RecordingRow {
             "#,
             song_artist_uuid,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
-    pub async fn insert(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn insert(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO recording (uuid, song_uuid, duration_ms)
@@ -103,14 +105,14 @@ impl RecordingRow {
             self.song_uuid,
             self.duration_ms,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
     }
 
     pub async fn update_duration(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
         duration_ms: i64,
     ) -> Result<(), sqlx::Error> {
@@ -123,7 +125,7 @@ impl RecordingRow {
             duration_ms,
             recording_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
@@ -131,16 +133,19 @@ impl RecordingRow {
 
     pub async fn set_duration(
         &mut self,
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         duration_ms: i64,
     ) -> Result<(), sqlx::Error> {
-        Self::update_duration(pool, self.uuid, duration_ms).await?;
+        Self::update_duration(tx, self.uuid, duration_ms).await?;
         self.duration_ms = duration_ms;
 
         Ok(())
     }
 
-    pub async fn delete(pool: &Pool<Sqlite>, recording_uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn delete(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        recording_uuid: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"
                 DELETE FROM recording
@@ -148,14 +153,14 @@ impl RecordingRow {
             "#,
             recording_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(result.rows_affected() > 0)
     }
 
     pub async fn uuid_exists(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
     ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
@@ -168,7 +173,7 @@ impl RecordingRow {
             "#,
             recording_uuid,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }

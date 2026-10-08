@@ -33,7 +33,8 @@
     - [x] Can save subtitles
     - [x] Can reload subtitles
     - [x] Can choose where save subtitles
-    - [ ] Save where the file was saved in a db and retrieve based on the track
+    - [x] Save where the file was saved in a db
+    - [ ] Can retrieve a subtitle file from where it was saved
 - [x] Can edit lyrics
     - [x] Can edit lyrics of untimed lines
     - [x] Can edit lyrics of line aligned cues

@@ -4,5 +4,6 @@ pub mod history;
 pub mod modal;
 pub mod mode;
 pub mod renderer;
+pub mod repositories;
 pub mod state;
 pub mod synchronizer;

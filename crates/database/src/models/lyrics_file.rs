@@ -1,4 +1,3 @@
-use sqlx::{Pool, sqlite::Sqlite};
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -12,7 +11,7 @@ pub struct LyricsFileRow {
 
 impl LyricsFileRow {
     pub async fn select_by_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         lyrics_file_uuid: Uuid,
     ) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as!(
@@ -29,12 +28,12 @@ impl LyricsFileRow {
             "#,
             lyrics_file_uuid,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
     pub async fn select_by_recording_uuid(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
     ) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as!(
@@ -51,12 +50,12 @@ impl LyricsFileRow {
             "#,
             recording_uuid,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_variant_id(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         variant_id: i64,
     ) -> Result<Vec<Self>, sqlx::Error> {
         sqlx::query_as!(
@@ -73,12 +72,12 @@ impl LyricsFileRow {
             "#,
             variant_id,
         )
-        .fetch_all(pool)
+        .fetch_all(&mut **tx)
         .await
     }
 
     pub async fn select_by_file_path(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         file_path: &str,
     ) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as!(
@@ -95,12 +94,12 @@ impl LyricsFileRow {
             "#,
             file_path,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
     pub async fn select(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         recording_uuid: Uuid,
         variant_id: i64,
         format_id: i64,
@@ -123,11 +122,14 @@ impl LyricsFileRow {
             variant_id,
             format_id,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 
-    pub async fn insert(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn insert(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO lyrics_file (
@@ -145,13 +147,16 @@ impl LyricsFileRow {
             self.format_id,
             self.file_path,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
     }
 
-    pub async fn delete(pool: &Pool<Sqlite>, lyrics_file_uuid: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn delete(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        lyrics_file_uuid: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"
                 DELETE FROM lyrics_file
@@ -159,14 +164,14 @@ impl LyricsFileRow {
             "#,
             lyrics_file_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(result.rows_affected() > 0)
     }
 
     pub async fn update_file_path(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         lyrics_file_uuid: Uuid,
         file_path: &str,
     ) -> Result<bool, sqlx::Error> {
@@ -179,7 +184,7 @@ impl LyricsFileRow {
             file_path,
             lyrics_file_uuid,
         )
-        .execute(pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(result.rows_affected() > 0)
@@ -187,17 +192,17 @@ impl LyricsFileRow {
 
     pub async fn set_file_path(
         &mut self,
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         file_path: &str,
     ) -> Result<(), sqlx::Error> {
-        Self::update_file_path(pool, self.uuid, file_path).await?;
+        Self::update_file_path(tx, self.uuid, file_path).await?;
         self.file_path = file_path.to_owned();
 
         Ok(())
     }
 
     pub async fn uuid_exists(
-        pool: &Pool<Sqlite>,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
         lyrics_file_uuid: Uuid,
     ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar!(
@@ -210,7 +215,7 @@ impl LyricsFileRow {
             "#,
             lyrics_file_uuid,
         )
-        .fetch_one(pool)
+        .fetch_one(&mut **tx)
         .await
         .map(|exists| exists != 0)
     }
