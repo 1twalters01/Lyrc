@@ -124,6 +124,8 @@ impl<'a> SubtitleDocumentRepository<'a> {
             };
         println!("lyrics_file_row: {:?}", lyrics_file_row);
 
+        // Need to save audio file too so that loading from a given audiofile works
+
         tx.commit().await?;
         Ok(())
     }

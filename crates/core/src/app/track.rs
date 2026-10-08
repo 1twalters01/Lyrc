@@ -11,6 +11,10 @@ where
     }
 
     pub async fn update_subtitle_document(&mut self) {
+        // Get audio file from db using audio file path
+        // Get the recording_uuid
+        // Get lyrics file from recording_uuid
+        // If not possible then:
         self.state.reload_subtitle_documents().await;
     }
 }
