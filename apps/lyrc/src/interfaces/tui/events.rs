@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{keyboard, workers::start::Workers};
+use crate::{keyboard, workers::start::WorkersRx};
 
 use configuration::config::Config;
 use lyrc_core::app::App;
@@ -12,7 +12,7 @@ use futures_util::stream::StreamExt;
 
 pub async fn handle_tui_events(
     mut app: App<TuiRenderer>,
-    mut workers: Workers,
+    mut workers_rx: WorkersRx,
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mpris = app.mpris_client.clone();
@@ -28,9 +28,9 @@ pub async fn handle_tui_events(
 
             Some(Ok(Event::Key(key))) = keyboard.next() => keyboard::handle_keyboard_event(&mut app, key, &config).await?,
 
-            Some(result) = workers.alignment.result_rx.recv() => app.handle_alignment_event(result)?,
+            Some(result) = workers_rx.alignment_rx.recv() => app.handle_alignment_event(result)?,
 
-            Some(result) = workers.translation.result_rx.recv() => app.handle_translation_event(result)?,
+            Some(result) = workers_rx.translation_rx.recv() => app.handle_translation_event(result)?,
         }
     }
 

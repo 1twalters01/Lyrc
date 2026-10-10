@@ -28,8 +28,8 @@ pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         GuiRenderer::new()?,
         database_service,
         player,
-        workers.alignment.request_tx,
-        workers.translation.request_tx,
+        workers.tx.alignment_tx,
+        workers.tx.translation_tx,
         &config,
     )
     .await;

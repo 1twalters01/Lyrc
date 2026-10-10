@@ -53,7 +53,7 @@ pub async fn get_id_by_translation(
 pub async fn get_translation_by_id(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     translation_id: i64,
-) -> Result<Option<String>, sqlx::Error> { 
+) -> Result<Option<String>, sqlx::Error> {
     sqlx::query_scalar!(
         r#"
             SELECT name
@@ -111,7 +111,7 @@ pub async fn get_language_by_id(
         "#,
         language_id
     )
-        .fetch_optional(&mut **tx)
+    .fetch_optional(&mut **tx)
     .await?;
 
     match code_3 {

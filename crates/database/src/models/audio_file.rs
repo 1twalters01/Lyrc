@@ -124,7 +124,7 @@ impl AudioFileRow {
 
     pub async fn delete(
         tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
-        uuid: Uuid
+        uuid: Uuid,
     ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"

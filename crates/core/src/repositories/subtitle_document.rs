@@ -5,7 +5,9 @@ use sqlx::{Pool, Sqlite};
 use subtitles::subtitles::SubtitleDocument;
 
 use database::models::{
-    artist::ArtistRow, audio_file::AudioFileRow, lookup, lyrics_file::LyricsFileRow, lyrics_variant::LyricsVariantRow, recording::RecordingRow, recording_artist::RecordingArtistRow, song::SongRow, song_artist::SongArtistRow,
+    artist::ArtistRow, audio_file::AudioFileRow, lookup, lyrics_file::LyricsFileRow,
+    lyrics_variant::LyricsVariantRow, recording::RecordingRow,
+    recording_artist::RecordingArtistRow, song::SongRow, song_artist::SongArtistRow,
 };
 
 use crate::state::SubtitleVariant;
@@ -68,22 +70,25 @@ impl<'a> SubtitleDocumentRepository<'a> {
             }
         };
 
-        let recording_artist_row = match RecordingArtistRow::select_by_uuids(&mut tx, recording_row.uuid, artist_row.uuid).await? {
-            Some(row) => row,
-            None => {
-                let row = RecordingArtistRow {
-                    recording_uuid: recording_row.uuid,
-                    artist_uuid: artist_row.uuid,
-                };
+        let recording_artist_row =
+            match RecordingArtistRow::select_by_uuids(&mut tx, recording_row.uuid, artist_row.uuid)
+                .await?
+            {
+                Some(row) => row,
+                None => {
+                    let row = RecordingArtistRow {
+                        recording_uuid: recording_row.uuid,
+                        artist_uuid: artist_row.uuid,
+                    };
 
-                row.insert(&mut tx).await?;
+                    row.insert(&mut tx).await?;
 
-                row
-            },
-        };
+                    row
+                }
+            };
 
         // Get relevant Source IDs
-        
+
         // Try to insert to Recording Identifier
 
         // Get lyrics Variant
@@ -142,23 +147,28 @@ impl<'a> SubtitleDocumentRepository<'a> {
                     lyrics_file_row
                 }
             };
-        println!("document_file_path: {:?}", document_file_path.to_string_lossy().to_string());
+        println!(
+            "document_file_path: {:?}",
+            document_file_path.to_string_lossy().to_string()
+        );
         println!("lyrics_file_row: {:?}", lyrics_file_row);
 
-        // Need to save audio file too so that loading from a given audiofile works
+        // Need to save audio file too so that loading from a given audiofile
+        // works
         let audio_file_path_string = audio_file_path.to_string_lossy().to_string();
-        let audio_file_row = match AudioFileRow::select_by_file_path(&mut tx, &audio_file_path_string).await? {
-            Some(audio_file_row) => audio_file_row,
-            None => {
-                let audio_file_row = AudioFileRow {
-                    uuid: uuid::Uuid::new_v4(),
-                    recording_uuid: recording_row.uuid,
-                    file_path: audio_file_path_string,
-                };
-                audio_file_row.insert(&mut tx).await?;
-                audio_file_row
-            }
-        };
+        let audio_file_row =
+            match AudioFileRow::select_by_file_path(&mut tx, &audio_file_path_string).await? {
+                Some(audio_file_row) => audio_file_row,
+                None => {
+                    let audio_file_row = AudioFileRow {
+                        uuid: uuid::Uuid::new_v4(),
+                        recording_uuid: recording_row.uuid,
+                        file_path: audio_file_path_string,
+                    };
+                    audio_file_row.insert(&mut tx).await?;
+                    audio_file_row
+                }
+            };
 
         // println!("audio_file_row: {:?}", audio_file_row);
 
