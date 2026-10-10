@@ -29,7 +29,7 @@
     - [x] Can switch the displayed lyrics language
     - [x] Can choose the language to switch to whilst in the app
 - [x] Can automatically read the best aligned file type for a track (elrc, lrc, txt)
-- [ ] Can save and reload lyrics correctly
+- [x] Can save and reload lyrics correctly
     - [x] Can save subtitles
     - [x] Can reload subtitles
     - [x] Can choose where save subtitles
