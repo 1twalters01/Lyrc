@@ -140,6 +140,9 @@ impl LyricsFileRow {
                     file_path
                 )
                 VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(recording_uuid, variant_id, format_id)
+                DO UPDATE SET
+                    file_path = excluded.file_path
             "#,
             self.uuid,
             self.recording_uuid,

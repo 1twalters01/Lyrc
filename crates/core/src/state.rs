@@ -48,7 +48,7 @@ pub enum SubtitleVariant {
 #[derive(Clone)]
 pub struct SubtitleDocuments {
     documents: HashMap<SubtitleVariant, SubtitleDocumentState>,
-    active_variant: Option<SubtitleVariant>,
+    pub active_variant: Option<SubtitleVariant>,
     cache: HashMap<SubtitleVariant, SubtitleDocumentState>,
 }
 

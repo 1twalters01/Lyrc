@@ -52,7 +52,7 @@ where
         };
 
         app.update_track().await;
-        app.update_subtitle_document().await;
+        let _ = app.update_subtitle_document().await;
 
         app
     }

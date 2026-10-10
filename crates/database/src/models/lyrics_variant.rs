@@ -8,7 +8,10 @@ pub struct LyricsVariantRow {
 }
 
 impl LyricsVariantRow {
-    pub async fn select_by_id(pool: &Pool<Sqlite>, id: i64) -> Result<Option<Self>, sqlx::Error> {
+    pub async fn select_by_id(
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        id: i64
+    ) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as!(
             Self,
             r#"
@@ -21,7 +24,7 @@ impl LyricsVariantRow {
             "#,
             id,
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut **tx)
         .await
     }
 

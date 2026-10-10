@@ -35,7 +35,7 @@
     - [x] Can choose where save subtitles
     - [x] Save where the subtitle file was saved in a db
     - [x] Save where the audio file was saved in a db
-    - [ ] Can retrieve a subtitle file from where it was saved
+    - [x] Can retrieve a subtitle file from where it was saved
 - [x] Can edit lyrics
     - [x] Can edit lyrics of untimed lines
     - [x] Can edit lyrics of line aligned cues

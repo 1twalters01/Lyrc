@@ -142,6 +142,7 @@ impl<'a> SubtitleDocumentRepository<'a> {
                     lyrics_file_row
                 }
             };
+        println!("document_file_path: {:?}", document_file_path.to_string_lossy().to_string());
         println!("lyrics_file_row: {:?}", lyrics_file_row);
 
         // Need to save audio file too so that loading from a given audiofile works
@@ -158,6 +159,8 @@ impl<'a> SubtitleDocumentRepository<'a> {
                 audio_file_row
             }
         };
+
+        // println!("audio_file_row: {:?}", audio_file_row);
 
         tx.commit().await?;
         Ok(())
