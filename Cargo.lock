@@ -827,6 +827,7 @@ dependencies = [
  "mpris",
  "pyo3",
  "pyo3-async-runtimes",
+ "subtitles",
  "tokio",
 ]
 

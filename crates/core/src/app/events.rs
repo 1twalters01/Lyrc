@@ -1,5 +1,6 @@
 use aligner::messages::AlignmentResult;
 use chrono::Duration;
+use downloader::messages::DownloadResult;
 use mpris::playback::{PlaybackStatus, PlayerEvent};
 use subtitles::subtitles::SyncLevel;
 use translator::messages::TranslationResult;
@@ -27,6 +28,36 @@ where
         );
 
         self.render()?;
+        Ok(())
+    }
+
+    pub fn handle_download_event(
+        &mut self,
+        event: DownloadResult,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        match event {
+            DownloadResult::Complete(subtitle_document) => {
+                self.state.download_running = false;
+                if let Some(subtitle_document) = subtitle_document {
+                    let document_state = SubtitleDocumentState::new(subtitle_document);
+                    self.state
+                        .subtitle_documents
+                        .insert_forced(SubtitleVariant::Original, document_state);
+
+                    self.state
+                        .subtitle_documents
+                        .set_variant(SubtitleVariant::Original);
+                }
+            }
+            DownloadResult::Cancelled => {
+                self.state.download_running = false;
+            }
+            DownloadResult::Failed(error) => {
+                self.state.alignment_running = false;
+                return Err(Box::new(error));
+            }
+        }
+
         Ok(())
     }
 

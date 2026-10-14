@@ -1,10 +1,10 @@
 use futures::future::BoxFuture;
 use mpris::track::Track;
 use pyo3::{prelude::*, types::PyDict};
-use pyo3_async_runtimes::tokio::into_future;
+use pyo3_async_runtimes::{TaskLocals, into_future_with_locals};
 
 use crate::{
-    error::LyricsError,
+    error::DownloadError,
     models::{Lyrics, LyricsFormat, LyricsSource},
     provider::LyricsDownloader,
 };
@@ -12,7 +12,7 @@ use crate::{
 pub struct MusixmatchProvider;
 
 impl LyricsDownloader for MusixmatchProvider {
-    fn search(&self, track: Track) -> BoxFuture<'static, Result<Option<Lyrics>, LyricsError>> {
+    fn search(&self, track: Track, locals: TaskLocals) -> BoxFuture<'static, Result<Option<Lyrics>, DownloadError>> {
         let api_key = "load the correct api key from config";
 
         // Load from config or default?
@@ -70,13 +70,13 @@ impl LyricsDownloader for MusixmatchProvider {
 
                 let coroutine =
                     lyrics_service.call_method1("search", (py_track, "musixmatch", options))?;
-                into_future(coroutine)
+                into_future_with_locals(&locals, coroutine)
             })
-            .map_err(|e| LyricsError::PythonError { error: e })?;
+            .map_err(|e| DownloadError::PythonError { error: e })?;
 
             let result = py_future
                 .await
-                .map_err(|e| LyricsError::PythonError { error: e })?;
+                .map_err(|e| DownloadError::PythonError { error: e })?;
 
             let lyrics: Option<Lyrics> = Python::attach(|py| {
                 if result.is_none(py) {
@@ -113,7 +113,7 @@ impl LyricsDownloader for MusixmatchProvider {
                     source,
                 }))
             })
-            .map_err(|e| LyricsError::PythonError { error: e })?;
+            .map_err(|e| DownloadError::PythonError { error: e })?;
 
             Ok(lyrics)
         })

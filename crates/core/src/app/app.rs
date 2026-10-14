@@ -1,6 +1,7 @@
 use aligner::messages::AlignmentRequest;
 use configuration::config::Config;
 use database::service::DatabaseService;
+use downloader::messages::DownloadRequest;
 use mpris::client::MprisClient;
 use tokio::sync::mpsc::Sender;
 use translator::messages::TranslationRequest;
@@ -19,8 +20,9 @@ where
     pub clock: PlaybackClock,
     pub state: AppState,
     pub mpris_client: MprisClient,
-    pub alignment_req_tx: Sender<AlignmentRequest>,
+    pub download_req_tx: Sender<DownloadRequest>,
     pub translation_req_tx: Sender<TranslationRequest>,
+    pub alignment_req_tx: Sender<AlignmentRequest>,
 }
 
 impl<R> App<R>
@@ -31,8 +33,9 @@ where
         renderer: R,
         database_service: DatabaseService,
         player: &str,
-        alignment_req_tx: Sender<AlignmentRequest>,
+        download_req_tx: Sender<DownloadRequest>,
         translation_req_tx: Sender<TranslationRequest>,
+        alignment_req_tx: Sender<AlignmentRequest>,
         config: &Config,
     ) -> Self {
         let synchronizer = AppSynchronizer::new();
@@ -47,8 +50,9 @@ where
             state,
             synchronizer,
             mpris_client,
-            alignment_req_tx,
+            download_req_tx,
             translation_req_tx,
+            alignment_req_tx,
         };
 
         app.update_track().await;

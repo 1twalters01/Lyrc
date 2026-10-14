@@ -28,9 +28,7 @@ impl TranslationWorker {
         result_tx: mpsc::Sender<TranslationResult>,
         locals: TaskLocals,
     ) {
-        println!("start handling of translation");
         tokio::spawn(async move {
-            println!("Inside of tokio spawn");
             while let Some(request) = request_rx.recv().await {
                 match request {
                     TranslationRequest::Translate(TranslationTask {

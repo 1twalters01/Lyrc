@@ -191,8 +191,9 @@ pub struct AppState {
     pub automatic_scroll_offset: usize,
     pub app_mode: AppMode,
     pub modal: Option<Modal>,
-    pub alignment_running: bool,
+    pub download_running: bool,
     pub translation_running: bool,
+    pub alignment_running: bool,
 }
 
 impl AppState {
@@ -208,8 +209,9 @@ impl AppState {
             automatic_scroll_offset: 0,
             app_mode: AppMode::Normal,
             modal: None,
-            alignment_running: false,
+            download_running: false,
             translation_running: false,
+            alignment_running: false,
         }
     }
 

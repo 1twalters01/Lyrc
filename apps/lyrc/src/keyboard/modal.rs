@@ -300,53 +300,11 @@ pub async fn handle_key<R: Renderer>(
             }
 
             KeyCode::Enter => {
-                if app.state.subtitle_documents.get_original().is_none() {
-                    let lyrics_provider = new_provider.get_provider();
-                    let track = app.state.track.clone();
-                    let subtitle_document = match track {
-                        Some(track) => {
-                            let lyrics = lyrics_provider.search(track.clone()).await?;
-                            let mut document_path = None;
-                            if let Some(lyrics) = lyrics {
-                                match lyrics.format {
-                                    LyricsFormat::Lrc => {
-                                        if let Some(file_path) = track.file_path {
-                                            let mut lrc_path = file_path.to_path_buf();
-                                            lrc_path.set_extension("lrc");
-                                            document_path = Some(lrc_path);
-                                        }
-                                        let mut document = LrcParser.parse(&lyrics.content)?;
-                                        document.metadata.file_path = document_path;
-                                        if document.metadata.artists.is_empty() {
-                                            document.metadata.artists.extend(track.artists);
-                                        }
-                                        if document.metadata.title.is_none() {
-                                            document.metadata.title = Some(track.title);
-                                        }
-
-                                        Some(document)
-                                    }
-                                    LyricsFormat::Text => None,
-                                }
-                            } else {
-                                None
-                            }
-                        }
-                        _ => None,
-                    };
-
-                    if let Some(subtitle_document) = subtitle_document {
-                        app.state.subtitle_documents.insert(
-                            SubtitleVariant::Original,
-                            SubtitleDocumentState::new(subtitle_document),
-                        );
-                    }
-
-                    if app.state.subtitle_documents.active().is_none() {
-                        app.state.subtitle_documents.select_default();
-                    }
+                let track = &app.state.track.clone();
+                if let Some(track) = track {
+                    app.start_download(track, new_provider).await?
                 }
-            }
+            },
 
             _ => {}
         },

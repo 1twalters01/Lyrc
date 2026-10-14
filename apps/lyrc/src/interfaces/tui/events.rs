@@ -28,6 +28,8 @@ pub async fn handle_tui_events(
 
             Some(Ok(Event::Key(key))) = keyboard.next() => keyboard::handle_keyboard_event(&mut app, key, &config).await?,
 
+            Some(result) = workers_rx.download_rx.recv() => app.handle_download_event(result)?,
+
             Some(result) = workers_rx.alignment_rx.recv() => app.handle_alignment_event(result)?,
 
             Some(result) = workers_rx.translation_rx.recv() => app.handle_translation_event(result)?,

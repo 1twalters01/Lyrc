@@ -15,8 +15,9 @@ pub async fn run_tui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         TuiRenderer::new()?,
         database_service,
         &player,
-        workers.tx.alignment_tx,
+        workers.tx.download_tx,
         workers.tx.translation_tx,
+        workers.tx.alignment_tx,
         &config,
     )
     .await;

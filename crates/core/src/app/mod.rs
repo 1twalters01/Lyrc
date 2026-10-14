@@ -7,6 +7,7 @@ mod events;
 mod addition;
 mod alignment;
 mod deletion;
+mod download;
 mod history;
 mod modes;
 mod navigation;

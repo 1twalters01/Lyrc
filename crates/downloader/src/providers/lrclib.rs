@@ -1,10 +1,10 @@
 use futures::future::BoxFuture;
 use mpris::track::Track;
 use pyo3::{prelude::*, types::PyDict};
-use pyo3_async_runtimes::tokio::into_future;
+use pyo3_async_runtimes::{TaskLocals, into_future_with_locals, tokio::into_future};
 
 use crate::{
-    error::LyricsError,
+    error::DownloadError,
     models::{Lyrics, LyricsFormat, LyricsSource},
     provider::LyricsDownloader,
 };
@@ -12,7 +12,7 @@ use crate::{
 pub struct LrclibProvider;
 
 impl LyricsDownloader for LrclibProvider {
-    fn search(&self, track: Track) -> BoxFuture<'static, Result<Option<Lyrics>, LyricsError>> {
+    fn search(&self, track: Track, locals: TaskLocals) -> BoxFuture<'static, Result<Option<Lyrics>, DownloadError>> {
         Box::pin(async move {
             let py_future = Python::attach(|py| -> PyResult<_> {
                 // import required python packages
@@ -57,13 +57,13 @@ impl LyricsDownloader for LrclibProvider {
 
                 let coroutine =
                     lyrics_service.call_method1("search", (py_track, "lrclib", options))?;
-                into_future(coroutine)
+                into_future_with_locals(&locals, coroutine)
             })
-            .map_err(|e| LyricsError::PythonError { error: e })?;
+            .map_err(|e| DownloadError::PythonError { error: e })?;
 
             let result = py_future
                 .await
-                .map_err(|e| LyricsError::PythonError { error: e })?;
+                .map_err(|e| DownloadError::PythonError { error: e })?;
 
             let lyrics: Option<Lyrics> = Python::attach(|py| {
                 if result.is_none(py) {
@@ -100,7 +100,7 @@ impl LyricsDownloader for LrclibProvider {
                     source,
                 }))
             })
-            .map_err(|e| LyricsError::PythonError { error: e })?;
+            .map_err(|e| DownloadError::PythonError { error: e })?;
 
             Ok(lyrics)
         })

@@ -4,24 +4,24 @@ use std::{error::Error, fmt};
 
 // use thiserror?
 #[derive(Debug)]
-pub enum LyricsError {
+pub enum DownloadError {
     PythonError { error: PyErr },
 }
 
-impl fmt::Display for LyricsError {
+impl fmt::Display for DownloadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            LyricsError::PythonError { error } => {
+            DownloadError::PythonError { error } => {
                 write!(f, "Python error: {error}")
             }
         }
     }
 }
 
-impl Error for LyricsError {
+impl Error for DownloadError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            LyricsError::PythonError { error } => Some(error),
+            DownloadError::PythonError { error } => Some(error),
         }
     }
 }
