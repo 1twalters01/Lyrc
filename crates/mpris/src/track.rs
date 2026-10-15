@@ -28,7 +28,10 @@ pub struct Track {
 }
 
 impl Track {
-    pub async fn parse_track(mpris: &MprisClient, metadata: HashMap<String, OwnedValue>) -> Track {
+    pub async fn parse_track(
+        mpris: &MprisClient,
+        metadata: HashMap<String, OwnedValue>,
+    ) -> Track {
         let album = get_optional_string(&metadata, "xesam:album");
         let disc_number = get_optional_i32(&metadata, "xesam:discNumber");
         let title = get_string(&metadata, "xesam:title");
@@ -46,7 +49,6 @@ impl Track {
         let isrc = file_path
             .as_ref()
             .and_then(|file_path| get_isrc(&file_path).unwrap_or(None));
-        // println!("\nisrc: {:?}", isrc);
 
         Track {
             album,
@@ -99,13 +101,19 @@ fn get_string(metadata: &HashMap<String, OwnedValue>, key: &str) -> String {
         .unwrap_or_default()
 }
 
-fn get_optional_string(metadata: &HashMap<String, OwnedValue>, key: &str) -> Option<String> {
+fn get_optional_string(
+    metadata: &HashMap<String, OwnedValue>,
+    key: &str,
+) -> Option<String> {
     metadata
         .get(key)
         .and_then(|v| v.downcast_ref::<String>().ok())
 }
 
-fn get_optional_pathbuf(metadata: &HashMap<String, OwnedValue>, key: &str) -> Option<PathBuf> {
+fn get_optional_pathbuf(
+    metadata: &HashMap<String, OwnedValue>,
+    key: &str,
+) -> Option<PathBuf> {
     metadata
         .get(key)
         .and_then(|v| v.downcast_ref::<String>().ok())
@@ -113,11 +121,17 @@ fn get_optional_pathbuf(metadata: &HashMap<String, OwnedValue>, key: &str) -> Op
         .and_then(|url| url.to_file_path().ok())
 }
 
-fn get_optional_i32(metadata: &HashMap<String, OwnedValue>, key: &str) -> Option<i32> {
+fn get_optional_i32(
+    metadata: &HashMap<String, OwnedValue>,
+    key: &str,
+) -> Option<i32> {
     metadata.get(key).and_then(|v| v.downcast_ref::<i32>().ok())
 }
 
-fn get_string_array(metadata: &HashMap<String, OwnedValue>, key: &str) -> Vec<String> {
+fn get_string_array(
+    metadata: &HashMap<String, OwnedValue>,
+    key: &str,
+) -> Vec<String> {
     let Some(value) = metadata.get(key) else {
         return Vec::new();
     };
@@ -154,14 +168,18 @@ fn get_duration(metadata: &HashMap<String, OwnedValue>, key: &str) -> Duration {
         .unwrap_or_default()
 }
 
-fn get_object_path(metadata: &HashMap<String, OwnedValue>, key: &str) -> Option<OwnedObjectPath> {
+fn get_object_path(
+    metadata: &HashMap<String, OwnedValue>,
+    key: &str,
+) -> Option<OwnedObjectPath> {
     metadata
         .get(key)
         .and_then(|v| v.downcast_ref::<ObjectPath>().ok())
         .map(OwnedObjectPath::from)
 }
 
-async fn get_current_track_file_path_cmus() -> Result<Option<PathBuf>, std::io::Error> {
+async fn get_current_track_file_path_cmus()
+-> Result<Option<PathBuf>, std::io::Error> {
     let output = Command::new("cmus-remote").arg("-Q").output().await?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -175,7 +193,9 @@ async fn get_current_track_file_path_cmus() -> Result<Option<PathBuf>, std::io::
     Ok(None)
 }
 
-fn get_isrc(path: &Path) -> Result<Option<String>, lofty::error::FileParseError> {
+fn get_isrc(
+    path: &Path,
+) -> Result<Option<String>, lofty::error::FileParseError> {
     let tagged_file = read_from_path(path)?;
 
     let isrc = tagged_file

@@ -13,7 +13,9 @@ use uuid::Uuid;
 
 use crate::error::TranslationError;
 
-pub fn timedelta_to_duration(timedelta: &Bound<'_, PyAny>) -> PyResult<Duration> {
+pub fn timedelta_to_duration(
+    timedelta: &Bound<'_, PyAny>,
+) -> PyResult<Duration> {
     let days: i64 = timedelta.getattr("days")?.extract()?;
     let seconds: i64 = timedelta.getattr("seconds")?.extract()?;
     let microseconds: i64 = timedelta.getattr("microseconds")?.extract()?;
@@ -28,9 +30,11 @@ pub fn convert_py_cues_to_translated_subtitle_document(
     subtitle_document: SubtitleDocument,
     language: Language,
 ) -> Result<Option<SubtitleDocument>, TranslationError> {
-    let translated_cues = convert_py_cues_to_cues(py_translated_cues, &subtitle_document)?;
+    let translated_cues =
+        convert_py_cues_to_cues(py_translated_cues, &subtitle_document)?;
 
-    let translated_metadata = generate_translated_metadata(subtitle_document, language);
+    let translated_metadata =
+        generate_translated_metadata(subtitle_document, language);
 
     Ok(Some(SubtitleDocument {
         metadata: translated_metadata,
@@ -50,7 +54,8 @@ pub fn convert_py_cues_to_cues(
     };
 
     Python::attach(|py| -> PyResult<SubtitleCues> {
-        let binded_py_translated_cues = py_translated_cues.bind(py).cast::<PyList>()?;
+        let binded_py_translated_cues =
+            py_translated_cues.bind(py).cast::<PyList>()?;
         let translated_cues: PyResult<Vec<Cue>> = binded_py_translated_cues
             .iter()
             .enumerate()

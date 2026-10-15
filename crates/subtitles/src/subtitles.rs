@@ -139,7 +139,9 @@ impl SubtitleDocument {
         Ok(())
     }
 
-    pub fn from_pathbuf(path: PathBuf) -> Result<SubtitleDocument, Box<dyn std::error::Error>> {
+    pub fn from_pathbuf(
+        path: PathBuf,
+    ) -> Result<SubtitleDocument, Box<dyn std::error::Error>> {
         let content = fs::read_to_string(&path)?;
         match &path.extension() {
             // Make this an actual error type
@@ -164,7 +166,10 @@ impl SubtitleDocument {
                     Ok(subtitle_document)
                 }
                 Some(_) => Err(String::from("unknown file type").into()),
-                None => Err(String::from("os str cannot be turned into a &str").into()),
+                None => {
+                    Err(String::from("os str cannot be turned into a &str")
+                        .into())
+                }
             },
         }
     }
@@ -175,17 +180,24 @@ impl SubtitleDocument {
         if let Some(file_path) = &subtitle_document.metadata.file_path {
             if let Some(extension) = file_path.extension() {
                 if let None = extension.to_str() {
-                    return Err(String::from("os str cannot be turned into a &str").into());
+                    return Err(String::from(
+                        "os str cannot be turned into a &str",
+                    )
+                    .into());
                 }
             } else {
-                return Err(String::from("File does not have an extension").into());
+                return Err(
+                    String::from("File does not have an extension").into()
+                );
             }
         } else {
             return Err(String::from("File path does not exist").into());
         }
 
         match subtitle_document.sync_level() {
-            SyncLevel::Phoneme => Err(String::from("No Writer Available").into()),
+            SyncLevel::Phoneme => {
+                Err(String::from("No Writer Available").into())
+            }
             SyncLevel::Word => {
                 let writer = ElrcWriter;
                 let file = writer.write(&subtitle_document.clone())?;

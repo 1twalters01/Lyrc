@@ -10,7 +10,8 @@ use subtitles::{
 };
 
 use crate::{
-    error::TranslationError, helpers::convert_py_cues_to_translated_subtitle_document,
+    error::TranslationError,
+    helpers::convert_py_cues_to_translated_subtitle_document,
     provider::LyricsTranslator,
 };
 
@@ -30,9 +31,13 @@ impl LyricsTranslator for ArgosTranslator {
                 .first()
                 .ok_or(TranslationError::NoLanguageCode)?;
 
-            let py_translated_cues =
-                Self::translate_cues(original_language, &language, &subtitle_document, &locals)
-                    .await?;
+            let py_translated_cues = Self::translate_cues(
+                original_language,
+                &language,
+                &subtitle_document,
+                &locals,
+            )
+            .await?;
 
             convert_py_cues_to_translated_subtitle_document(
                 py_translated_cues,
@@ -56,30 +61,36 @@ impl ArgosTranslator {
 
             let service_module = PyModule::import(py, "translator.service")?;
             let cue_module = PyModule::import(py, "translator.models.cue")?;
-            let language_module = PyModule::import(py, "translator.models.language")?;
-            let provider_module = PyModule::import(py, "translator.providers.argos.provider")?;
-            let options_module = PyModule::import(py, "translator.providers.argos.options")?;
+            let language_module =
+                PyModule::import(py, "translator.models.language")?;
+            let provider_module =
+                PyModule::import(py, "translator.providers.argos.provider")?;
+            let options_module =
+                PyModule::import(py, "translator.providers.argos.options")?;
 
-            let to_language_py = language_module.getattr("Language")?.call1((
-                language.as_name(),
-                language.as_native_name(),
-                language.as_code_2(),
-                language.as_code_3(),
-                language.as_flores_200(),
-            ))?;
+            let to_language_py =
+                language_module.getattr("Language")?.call1((
+                    language.as_name(),
+                    language.as_native_name(),
+                    language.as_code_2(),
+                    language.as_code_3(),
+                    language.as_flores_200(),
+                ))?;
 
-            let original_language_py = language_module.getattr("Language")?.call1((
-                original_language.as_name(),
-                original_language.as_native_name(),
-                original_language.as_code_2(),
-                original_language.as_code_3(),
-                original_language.as_flores_200(),
-            ))?;
+            let original_language_py =
+                language_module.getattr("Language")?.call1((
+                    original_language.as_name(),
+                    original_language.as_native_name(),
+                    original_language.as_code_2(),
+                    original_language.as_code_3(),
+                    original_language.as_flores_200(),
+                ))?;
             let options = options_module
                 .getattr("ArgosOptions")?
                 .call1((original_language_py.clone(),))?;
 
-            let argos_translator = provider_module.getattr("ArgosTranslator")?.call0()?;
+            let argos_translator =
+                provider_module.getattr("ArgosTranslator")?.call0()?;
 
             argos_translator
                 .getattr("install_packages")?
@@ -96,28 +107,44 @@ impl ArgosTranslator {
             match &subtitle_document.cues {
                 SubtitleCues::Word(cues) => {
                     for cue in cues {
-                        let start =
-                            timedelta.call1((0, 0, cue.start.num_microseconds().unwrap_or(0)))?;
-                        let end =
-                            timedelta.call1((0, 0, cue.end.num_microseconds().unwrap_or(0)))?;
+                        let start = timedelta.call1((
+                            0,
+                            0,
+                            cue.start.num_microseconds().unwrap_or(0),
+                        ))?;
+                        let end = timedelta.call1((
+                            0,
+                            0,
+                            cue.end.num_microseconds().unwrap_or(0),
+                        ))?;
                         let content = cue
                             .words
                             .iter()
                             .map(|word| word.content.clone())
                             .collect::<Vec<String>>()
                             .join("");
-                        let py_cue = cue_module.getattr("Cue")?.call1((start, end, content))?;
+                        let py_cue = cue_module
+                            .getattr("Cue")?
+                            .call1((start, end, content))?;
                         lrc_contents.append(py_cue)?;
                     }
                 }
                 SubtitleCues::Cue(cues) => {
                     for cue in cues {
-                        let start =
-                            timedelta.call1((0, 0, cue.start.num_microseconds().unwrap_or(0)))?;
-                        let end =
-                            timedelta.call1((0, 0, cue.end.num_microseconds().unwrap_or(0)))?;
+                        let start = timedelta.call1((
+                            0,
+                            0,
+                            cue.start.num_microseconds().unwrap_or(0),
+                        ))?;
+                        let end = timedelta.call1((
+                            0,
+                            0,
+                            cue.end.num_microseconds().unwrap_or(0),
+                        ))?;
                         let content = cue.content.clone();
-                        let py_cue = cue_module.getattr("Cue")?.call1((start, end, content))?;
+                        let py_cue = cue_module
+                            .getattr("Cue")?
+                            .call1((start, end, content))?;
                         lrc_contents.append(py_cue)?;
                     }
                 }
@@ -127,7 +154,8 @@ impl ArgosTranslator {
                         lrc_contents.append(content)?;
                     }
                 }
-                // SubtitleCues::None => return Err(TranslationError::NoSubtitles),
+                // SubtitleCues::None => return
+                // Err(TranslationError::NoSubtitles),
                 SubtitleCues::None => {}
             }
 

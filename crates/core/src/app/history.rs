@@ -11,7 +11,8 @@ where
     R: Renderer,
 {
     pub fn push_to_history(&mut self, edit: Edit) -> bool {
-        if let Some(document_state) = self.state.subtitle_documents.active_mut() {
+        if let Some(document_state) = self.state.subtitle_documents.active_mut()
+        {
             document_state.edit_history.push(edit);
             return true;
         }
@@ -21,7 +22,9 @@ where
 
     pub fn undo(&mut self) {
         let Some(edit) = ({
-            let Some(document_state) = self.state.subtitle_documents.active_mut() else {
+            let Some(document_state) =
+                self.state.subtitle_documents.active_mut()
+            else {
                 return;
             };
 
@@ -32,7 +35,8 @@ where
 
         self.undo_edit(&edit);
 
-        if let Some(document_state) = self.state.subtitle_documents.active_mut() {
+        if let Some(document_state) = self.state.subtitle_documents.active_mut()
+        {
             document_state.edit_history.push_redo(edit);
 
             if document_state.edit_history.is_empty() {
@@ -43,7 +47,9 @@ where
 
     pub fn redo(&mut self) {
         let Some(edit) = ({
-            let Some(document_state) = self.state.subtitle_documents.active_mut() else {
+            let Some(document_state) =
+                self.state.subtitle_documents.active_mut()
+            else {
                 return;
             };
 
@@ -54,7 +60,8 @@ where
 
         self.redo_edit(&edit);
 
-        if let Some(document_state) = self.state.subtitle_documents.active_mut() {
+        if let Some(document_state) = self.state.subtitle_documents.active_mut()
+        {
             document_state.unsaved_changes = true;
             document_state.edit_history.push_undo(edit);
         }
@@ -67,22 +74,31 @@ where
                     match &mut subtitle_document_state.document.cues {
                         SubtitleCues::Word(subtitle_cues) => {
                             for change in changes {
-                                if let SubtitleCues::Word(cues) = &change.old_content {
-                                    subtitle_cues[change.index] = cues[0].clone();
+                                if let SubtitleCues::Word(cues) =
+                                    &change.old_content
+                                {
+                                    subtitle_cues[change.index] =
+                                        cues[0].clone();
                                 }
                             }
                         }
                         SubtitleCues::Cue(subtitle_cues) => {
                             for change in changes {
-                                if let SubtitleCues::Cue(cues) = &change.old_content {
-                                    subtitle_cues[change.index] = cues[0].clone();
+                                if let SubtitleCues::Cue(cues) =
+                                    &change.old_content
+                                {
+                                    subtitle_cues[change.index] =
+                                        cues[0].clone();
                                 }
                             }
                         }
                         SubtitleCues::Line(subtitle_cues) => {
                             for change in changes {
-                                if let SubtitleCues::Line(cues) = &change.old_content {
-                                    subtitle_cues[change.index] = cues[0].clone();
+                                if let SubtitleCues::Line(cues) =
+                                    &change.old_content
+                                {
+                                    subtitle_cues[change.index] =
+                                        cues[0].clone();
                                 }
                             }
                         }
@@ -122,22 +138,31 @@ where
                     match &mut subtitle_document_state.document.cues {
                         SubtitleCues::Word(subtitle_cues) => {
                             for change in changes {
-                                if let SubtitleCues::Word(cues) = &change.old_content {
-                                    subtitle_cues[change.index] = cues[0].clone();
+                                if let SubtitleCues::Word(cues) =
+                                    &change.old_content
+                                {
+                                    subtitle_cues[change.index] =
+                                        cues[0].clone();
                                 }
                             }
                         }
                         SubtitleCues::Cue(subtitle_cues) => {
                             for change in changes {
-                                if let SubtitleCues::Cue(cues) = &change.old_content {
-                                    subtitle_cues[change.index] = cues[0].clone();
+                                if let SubtitleCues::Cue(cues) =
+                                    &change.old_content
+                                {
+                                    subtitle_cues[change.index] =
+                                        cues[0].clone();
                                 }
                             }
                         }
                         SubtitleCues::Line(subtitle_cues) => {
                             for change in changes {
-                                if let SubtitleCues::Line(cues) = &change.old_content {
-                                    subtitle_cues[change.index] = cues[0].clone();
+                                if let SubtitleCues::Line(cues) =
+                                    &change.old_content
+                                {
+                                    subtitle_cues[change.index] =
+                                        cues[0].clone();
                                 }
                             }
                         }

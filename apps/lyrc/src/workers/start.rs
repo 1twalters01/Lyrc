@@ -5,7 +5,8 @@ use tokio::sync::mpsc;
 use translator::messages::{TranslationRequest, TranslationResult};
 
 use crate::workers::{
-    alignment::AlignmentWorker, download::DownloadWorker, translation::TranslationWorker,
+    alignment::AlignmentWorker, download::DownloadWorker,
+    translation::TranslationWorker,
 };
 
 pub struct WorkersRx {
@@ -27,12 +28,18 @@ pub struct Workers {
 
 impl Workers {
     pub async fn start() -> Result<Self, PyErr> {
-        let locals = Python::attach(|py| pyo3_async_runtimes::tokio::get_current_locals(py))?;
+        let locals = Python::attach(|py| {
+            pyo3_async_runtimes::tokio::get_current_locals(py)
+        })?;
 
         let download_worker = DownloadWorker::start(locals.clone()).await;
         let translation_worker = TranslationWorker::start(locals.clone()).await;
         let alignment_worker = AlignmentWorker::start();
-        let workers = Self::from_workers(download_worker, translation_worker, alignment_worker);
+        let workers = Self::from_workers(
+            download_worker,
+            translation_worker,
+            alignment_worker,
+        );
 
         Ok(workers)
     }

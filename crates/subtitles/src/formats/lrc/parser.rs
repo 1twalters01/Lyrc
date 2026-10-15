@@ -43,7 +43,8 @@ impl SubtitleParser for LrcParser {
             .map(|line| Self::parse_line(line))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let mut subtitle_document = LrcParser::build_subtitle_document(lrc_lines);
+        let mut subtitle_document =
+            LrcParser::build_subtitle_document(lrc_lines);
 
         subtitle_document.update_languages();
 
@@ -130,15 +131,21 @@ impl LrcParser {
                 let milliseconds_str = &remainder[dot_idx + 1..];
                 let milliseconds = match milliseconds_str.len() {
                     2 => match milliseconds_str.parse::<i64>() {
-                        Ok(milliseconds) => Duration::milliseconds(milliseconds * 10),
+                        Ok(milliseconds) => {
+                            Duration::milliseconds(milliseconds * 10)
+                        }
                         Err(_) => return Err(LrcError::InvalidTimestamp),
                     },
                     3 => match milliseconds_str.parse::<i64>() {
-                        Ok(milliseconds) => Duration::milliseconds(milliseconds),
+                        Ok(milliseconds) => {
+                            Duration::milliseconds(milliseconds)
+                        }
                         Err(_) => return Err(LrcError::InvalidTimestamp),
                     },
                     _ => {
-                        return Err(LrcError::InvalidTimestampMillisecondFormat);
+                        return Err(
+                            LrcError::InvalidTimestampMillisecondFormat,
+                        );
                     }
                 };
 
@@ -183,20 +190,27 @@ impl LrcParser {
 
         for lrc_line in lrc_lines {
             match lrc_line {
-                LrcLine::Metadata { key, value } => match key.to_ascii_lowercase().as_str() {
-                    "ti" => subtitle_document.metadata.title = Some(value),
-                    "al" => subtitle_document.metadata.album = Some(value),
-                    "la" => {
-                        if let Some(code) = Language::from_str(&value).ok() {
-                            subtitle_document.metadata.languages.push(code.into())
+                LrcLine::Metadata { key, value } => {
+                    match key.to_ascii_lowercase().as_str() {
+                        "ti" => subtitle_document.metadata.title = Some(value),
+                        "al" => subtitle_document.metadata.album = Some(value),
+                        "la" => {
+                            if let Some(code) = Language::from_str(&value).ok()
+                            {
+                                subtitle_document
+                                    .metadata
+                                    .languages
+                                    .push(code.into())
+                            }
                         }
+                        "ar" => subtitle_document.metadata.artists.extend(
+                            value
+                                .split(',')
+                                .map(|artist| artist.trim().to_owned()),
+                        ),
+                        _ => {}
                     }
-                    "ar" => subtitle_document
-                        .metadata
-                        .artists
-                        .extend(value.split(',').map(|artist| artist.trim().to_owned())),
-                    _ => {}
-                },
+                }
                 LrcLine::Lyric { timestamps, text } => {
                     let cues = SubtitleCues::Cue(
                         timestamps
@@ -222,7 +236,9 @@ impl LrcParser {
             for i in 0..cues.len().saturating_sub(1) {
                 let start = cues[i].start;
 
-                if let Some(next) = cues[i + 1..].iter().find(|cue| cue.start > start) {
+                if let Some(next) =
+                    cues[i + 1..].iter().find(|cue| cue.start > start)
+                {
                     cues[i].end = next.start;
                 }
             }

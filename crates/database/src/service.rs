@@ -16,7 +16,10 @@ impl DatabaseService {
             .map(|_| ())
     }
 
-    pub async fn from_url(database_url: &str, max_connections: u32) -> Result<Self, sqlx::Error> {
+    pub async fn from_url(
+        database_url: &str,
+        max_connections: u32,
+    ) -> Result<Self, sqlx::Error> {
         let pool = SqlitePoolOptions::new()
             .max_connections(max_connections)
             .connect(database_url)

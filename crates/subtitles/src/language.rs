@@ -559,8 +559,12 @@ impl FromStr for Language {
             "bn" | "ben" | "bengali" | "বাংলা" => Ok(Self::Bengali),
             "fr" | "fra" | "french" | "français" => Ok(Self::French),
             "de" | "deu" | "german" | "deutsch" => Ok(Self::German),
-            "uk" | "ukr" | "ukrainian" | "українська" => Ok(Self::Ukrainian),
-            "ka" | "kat" | "georgian" | "ქართული" => Ok(Self::Georgian),
+            "uk" | "ukr" | "ukrainian" | "українська" => {
+                Ok(Self::Ukrainian)
+            }
+            "ka" | "kat" | "georgian" | "ქართული" => {
+                Ok(Self::Georgian)
+            }
             "ar" | "ara" | "arabic" | "العربية" => Ok(Self::Arabic),
             "hi" | "hin" | "hindi" | "हिन्दी" => Ok(Self::Hindi),
             "ja" | "jpn" | "japanese" | "日本語" => Ok(Self::Japanese),
@@ -579,35 +583,59 @@ impl FromStr for Language {
             "hu" | "hun" | "hungarian" | "magyar" => Ok(Self::Hungarian),
             "cs" | "ces" | "czech" | "čeština" => Ok(Self::Czech),
             "el" | "ell" | "greek" | "ελληνικά" => Ok(Self::Greek),
-            "bg" | "bul" | "bulgarian" | "български" => Ok(Self::Bulgarian),
-            "be" | "bel" | "belarusian" | "беларуская" => Ok(Self::Belarusian),
+            "bg" | "bul" | "bulgarian" | "български" => {
+                Ok(Self::Bulgarian)
+            }
+            "be" | "bel" | "belarusian" | "беларуская" => {
+                Ok(Self::Belarusian)
+            }
             "mr" | "mar" | "marathi" | "मराठी" => Ok(Self::Marathi),
             "kn" | "kan" | "kannada" | "ಕನ್ನಡ" => Ok(Self::Kannada),
             "ro" | "ron" | "romanian" | "română" => Ok(Self::Romanian),
             "sl" | "slv" | "slovene" | "slovenščina" => Ok(Self::Slovene),
             "hr" | "hrv" | "croatian" | "hrvatski" => Ok(Self::Croatian),
             "sr" | "srp" | "serbian" | "српски" => Ok(Self::Serbian),
-            "mk" | "mkd" | "macedonian" | "македонски" => Ok(Self::Macedonian),
+            "mk" | "mkd" | "macedonian" | "македонски" => {
+                Ok(Self::Macedonian)
+            }
             "lt" | "lit" | "lithuanian" | "lietuvių" => Ok(Self::Lithuanian),
             "lv" | "lav" | "latvian" | "latviešu" => Ok(Self::Latvian),
             "et" | "est" | "estonian" | "eesti" => Ok(Self::Estonian),
             "ta" | "tam" | "tamil" | "தமிழ்" => Ok(Self::Tamil),
-            "vi" | "vie" | "vietnamese" | "tiếng việt" => Ok(Self::Vietnamese),
+            "vi" | "vie" | "vietnamese" | "tiếng việt" => {
+                Ok(Self::Vietnamese)
+            }
             "ur" | "urd" | "urdu" | "اُردُو" => Ok(Self::Urdu),
             "th" | "tha" | "thai" | "ภาษาไทย" => Ok(Self::Thai),
-            "gu" | "guj" | "gujarati" | "ગુજરાતી" => Ok(Self::Gujarati),
+            "gu" | "guj" | "gujarati" | "ગુજરાતી" => {
+                Ok(Self::Gujarati)
+            }
             "uz" | "uzb" | "uzbek" | "oʻzbekcha" => Ok(Self::Uzbek),
-            "pa" | "pan" | "punjabi" | "ਪੰਜਾਬੀ" => Ok(Self::Punjabi),
-            "az" | "aze" | "azerbaijani" | "azərbaycanca" => Ok(Self::Azerbaijani),
-            "id" | "ind" | "indonesian" | "bahasa indonesia" => Ok(Self::Indonesian),
+            "pa" | "pan" | "punjabi" | "ਪੰਜਾਬੀ" => {
+                Ok(Self::Punjabi)
+            }
+            "az" | "aze" | "azerbaijani" | "azərbaycanca" => {
+                Ok(Self::Azerbaijani)
+            }
+            "id" | "ind" | "indonesian" | "bahasa indonesia" => {
+                Ok(Self::Indonesian)
+            }
             "te" | "tel" | "telugu" | "తెలుగు" => Ok(Self::Telugu),
             "fa" | "pes" | "persian" | "فارسی" => Ok(Self::Persian),
-            "ml" | "mal" | "malayalam" | "മലയാളം" => Ok(Self::Malayalam),
+            "ml" | "mal" | "malayalam" | "മലയാളം" => {
+                Ok(Self::Malayalam)
+            }
             "or" | "ori" | "oriya" | "ଓଡ଼ିଆ" => Ok(Self::Oriya),
-            "my" | "mya" | "burmese" | "မြန်မာစာ" => Ok(Self::Burmese),
+            "my" | "mya" | "burmese" | "မြန်မာစာ" => {
+                Ok(Self::Burmese)
+            }
             "ne" | "nep" | "nepali" | "नेपाली" => Ok(Self::Nepali),
-            "si" | "sin" | "sinhalese" | "සිංහල" => Ok(Self::Sinhalese),
-            "km" | "khm" | "khmer" | "ភាសាខ្មែរ" => Ok(Self::Khmer),
+            "si" | "sin" | "sinhalese" | "සිංහල" => {
+                Ok(Self::Sinhalese)
+            }
+            "km" | "khm" | "khmer" | "ភាសាខ្មែរ" => {
+                Ok(Self::Khmer)
+            }
             "tk" | "tuk" | "turkmen" | "türkmençe" => Ok(Self::Turkmen),
             "ak" | "aka" | "akan" => Ok(Self::Akan),
             "zu" | "zul" | "zulu" | "isizulu" => Ok(Self::Zulu),

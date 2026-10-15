@@ -83,22 +83,26 @@ where
                     .first()
                     .unwrap_or(&0);
 
-                let original_content = match &subtitle_document_state.document.cues {
-                    SubtitleCues::Word(cues) => {
-                        SubtitleCues::Word(Vec::from([cues[index].clone()]))
-                    }
-                    SubtitleCues::Cue(cues) => SubtitleCues::Cue(Vec::from([cues[index].clone()])),
-                    SubtitleCues::Line(lines) => {
-                        SubtitleCues::Line(Vec::from([lines[index].clone()]))
-                    }
-                    SubtitleCues::None => SubtitleCues::None,
-                };
+                let original_content =
+                    match &subtitle_document_state.document.cues {
+                        SubtitleCues::Word(cues) => {
+                            SubtitleCues::Word(Vec::from([cues[index].clone()]))
+                        }
+                        SubtitleCues::Cue(cues) => {
+                            SubtitleCues::Cue(Vec::from([cues[index].clone()]))
+                        }
+                        SubtitleCues::Line(lines) => SubtitleCues::Line(
+                            Vec::from([lines[index].clone()]),
+                        ),
+                        SubtitleCues::None => SubtitleCues::None,
+                    };
 
                 let selected_edit_cues = Vec::from([EditCue {
                     index,
                     original_content,
                 }]);
-                let line_length = &subtitle_document_state.document.cues.cue_len(index);
+                let line_length =
+                    &subtitle_document_state.document.cues.cue_len(index);
                 let cursor = EditCursor::new(index, *line_length);
                 (cursor, selected_edit_cues.clone())
             }
@@ -110,15 +114,24 @@ where
                     .iter()
                     .map(|index| EditCue {
                         index: *index,
-                        original_content: match &subtitle_document_state.document.cues {
+                        original_content: match &subtitle_document_state
+                            .document
+                            .cues
+                        {
                             SubtitleCues::Word(cues) => {
-                                SubtitleCues::Word(Vec::from([cues[*index].clone()]))
+                                SubtitleCues::Word(Vec::from([
+                                    cues[*index].clone()
+                                ]))
                             }
                             SubtitleCues::Cue(cues) => {
-                                SubtitleCues::Cue(Vec::from([cues[*index].clone()]))
+                                SubtitleCues::Cue(Vec::from([
+                                    cues[*index].clone()
+                                ]))
                             }
                             SubtitleCues::Line(lines) => {
-                                SubtitleCues::Line(Vec::from([lines[*index].clone()]))
+                                SubtitleCues::Line(Vec::from([
+                                    lines[*index].clone()
+                                ]))
                             }
                             SubtitleCues::None => SubtitleCues::None,
                         },

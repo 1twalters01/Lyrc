@@ -20,7 +20,10 @@ where
         &mut self,
         event: PlayerEvent,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.state.update(&mut self.mpris_client, &event).await?;
+        if let Some(ref mut mpris_client) = self.mpris_client {
+            self.state.update(mpris_client, &event).await?
+        };
+
         self.clock.update(event);
         self.synchronizer.update(
             &self.state.subtitle_documents.active(),
@@ -39,10 +42,17 @@ where
             DownloadResult::Complete(subtitle_document) => {
                 self.state.download_running = false;
                 if let Some(subtitle_document) = subtitle_document {
-                    let document_state = SubtitleDocumentState::new(subtitle_document);
-                    self.state
-                        .subtitle_documents
-                        .insert_forced(SubtitleVariant::Original, document_state);
+                    let document_state =
+                        SubtitleDocumentState::new(subtitle_document);
+
+                    self.state.subtitle_documents.insert_forced(
+                        SubtitleVariant::Original,
+                        document_state.clone(),
+                    );
+                    self.state.subtitle_documents.insert_cache_forced(
+                        SubtitleVariant::Original,
+                        document_state,
+                    );
 
                     self.state
                         .subtitle_documents
@@ -76,9 +86,15 @@ where
                     );
                     if insert_res {
                         match new_sync_level {
-                            SyncLevel::Word => self.synchronizer.mode = SynchronizerMode::Word,
-                            SyncLevel::Cue => self.synchronizer.mode = SynchronizerMode::Cue,
-                            _ => self.synchronizer.mode = SynchronizerMode::None,
+                            SyncLevel::Word => {
+                                self.synchronizer.mode = SynchronizerMode::Word
+                            }
+                            SyncLevel::Cue => {
+                                self.synchronizer.mode = SynchronizerMode::Cue
+                            }
+                            _ => {
+                                self.synchronizer.mode = SynchronizerMode::None
+                            }
                         }
                     }
 
@@ -125,9 +141,15 @@ where
                     );
                     if insert_res {
                         match new_sync_level {
-                            SyncLevel::Word => self.synchronizer.mode = SynchronizerMode::Word,
-                            SyncLevel::Cue => self.synchronizer.mode = SynchronizerMode::Cue,
-                            _ => self.synchronizer.mode = SynchronizerMode::None,
+                            SyncLevel::Word => {
+                                self.synchronizer.mode = SynchronizerMode::Word
+                            }
+                            SyncLevel::Cue => {
+                                self.synchronizer.mode = SynchronizerMode::Cue
+                            }
+                            _ => {
+                                self.synchronizer.mode = SynchronizerMode::None
+                            }
                         }
                     }
 
@@ -150,7 +172,9 @@ where
         Ok(())
     }
 
-    pub async fn handle_tick_event(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn handle_tick_event(
+        &mut self,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let current_position = self.get_current_position().await;
         let playback_status = self.get_playback_status().await;
         self.process_tick(current_position, playback_status)

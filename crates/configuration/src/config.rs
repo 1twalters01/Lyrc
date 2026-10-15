@@ -16,7 +16,8 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let targets_in_priority_order = Vec::from([String::from("mpv"), String::from("cmus")]);
+        let targets_in_priority_order =
+            Vec::from([String::from("mpv"), String::from("cmus")]);
         let fps = 60f64;
         let clock_offset = Duration::milliseconds(0);
         let rewind_duration = Duration::milliseconds(-5000);

@@ -19,7 +19,9 @@ where
         }
 
         let subtitle_document = match &self.state.subtitle_documents.active() {
-            Some(subtitle_document_state) => subtitle_document_state.document.clone(),
+            Some(subtitle_document_state) => {
+                subtitle_document_state.document.clone()
+            }
             None => return Err(Box::new(TranslationError::NoSubtitles)),
         };
 

@@ -32,7 +32,8 @@ impl SubtitleParser for TxtParser {
             .map(|line| Self::parse_line(line))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let mut subtitle_document = TxtParser::build_subtitle_document(lrc_lines);
+        let mut subtitle_document =
+            TxtParser::build_subtitle_document(lrc_lines);
 
         subtitle_document.update_languages();
 
@@ -64,7 +65,9 @@ impl TxtParser {
             .map(|(tag, _)| tag)
         {
             if let Some((key, _)) = tag.split_once(":") {
-                if key.len() >= 2 && key.chars().all(|c| c.is_ascii_alphabetic()) {
+                if key.len() >= 2
+                    && key.chars().all(|c| c.is_ascii_alphabetic())
+                {
                     return TxtLineType::Metadata;
                 }
             }
@@ -95,27 +98,34 @@ impl TxtParser {
 
         for lrc_line in lrc_lines {
             match lrc_line {
-                TxtLine::Metadata { key, value } => match key.to_ascii_lowercase().as_str() {
-                    "ti" => subtitle_document.metadata.title = Some(value),
-                    "al" => subtitle_document.metadata.album = Some(value),
-                    "la" => {
-                        if let Some(code) = Language::from_str(&value).ok() {
-                            subtitle_document.metadata.languages.push(code.into())
+                TxtLine::Metadata { key, value } => {
+                    match key.to_ascii_lowercase().as_str() {
+                        "ti" => subtitle_document.metadata.title = Some(value),
+                        "al" => subtitle_document.metadata.album = Some(value),
+                        "la" => {
+                            if let Some(code) = Language::from_str(&value).ok()
+                            {
+                                subtitle_document
+                                    .metadata
+                                    .languages
+                                    .push(code.into())
+                            }
                         }
+                        "ar" => subtitle_document.metadata.artists.extend(
+                            value
+                                .split(',')
+                                .map(|artist| artist.trim().to_owned()),
+                        ),
+                        _ => {}
                     }
-                    "ar" => subtitle_document
-                        .metadata
-                        .artists
-                        .extend(value.split(',').map(|artist| artist.trim().to_owned())),
-                    _ => {}
-                },
+                }
                 TxtLine::Line { text } => {
-                    subtitle_document
-                        .cues
-                        .extend(SubtitleCues::Line(Vec::from([Line {
+                    subtitle_document.cues.extend(SubtitleCues::Line(
+                        Vec::from([Line {
                             id: Uuid::new_v4(),
                             content: text,
-                        }])));
+                        }]),
+                    ));
                 }
                 TxtLine::Empty => {}
             }

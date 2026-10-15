@@ -35,29 +35,44 @@ impl MprisClient {
 
     pub async fn connect(player: &str) -> zbus::Result<Self> {
         let connection = Connection::session().await?;
+        Self::with_connection(connection, player)
+    }
+
+    pub fn with_connection(
+        connection: Connection,
+        player: &str,
+    ) -> zbus::Result<Self> {
         let service = format!("org.mpris.MediaPlayer2.{player}");
 
-        Ok(Self {
+        let mpris_client = Self {
             connection,
             service: service.try_into()?,
             player: String::from(player),
-        })
+        };
+
+        Ok(mpris_client)
     }
 
     pub async fn find_players() -> zbus::Result<Vec<String>> {
         let connection = Connection::session().await?;
+        Self::find_players_on(&connection).await
+    }
 
-        let proxy = zbus::fdo::DBusProxy::new(&connection).await?;
-
+    async fn find_players_on(
+        connection: &Connection,
+    ) -> zbus::Result<Vec<String>> {
+        let proxy = zbus::fdo::DBusProxy::new(connection).await?;
         let names = proxy.list_names().await?;
 
-        Ok(names
+        let players = names
             .into_iter()
             .filter_map(|name| {
                 name.strip_prefix("org.mpris.MediaPlayer2.")
                     .map(str::to_owned)
             })
-            .collect::<Vec<_>>())
+            .collect::<Vec<_>>();
+
+        Ok(players)
     }
 
     async fn proxy(&self) -> zbus::Result<PlayerProxy<'_>> {
@@ -69,69 +84,88 @@ impl MprisClient {
 
     pub async fn metadata(&self) -> zbus::Result<HashMap<String, OwnedValue>> {
         let proxy = self.proxy().await?;
-        Ok(proxy.metadata().await?)
+        let metadata = proxy.metadata().await?;
+
+        Ok(metadata)
     }
 
     pub async fn get_current_position(&self) -> zbus::Result<Duration> {
         let proxy = self.proxy().await?;
         let micros = proxy.position().await?;
-        Ok(Duration::microseconds(micros as i64))
+        let current_position = Duration::microseconds(micros as i64);
+
+        Ok(current_position)
     }
 
     pub async fn get_current_track(&self) -> zbus::Result<Track> {
         let metadata = self.proxy().await?.metadata().await?;
+        let current_track = Track::parse_track(self, metadata).await;
 
-        Ok(Track::parse_track(self, metadata).await)
+        Ok(current_track)
     }
 
     pub async fn get_playback_status(&self) -> zbus::Result<PlaybackStatus> {
         let proxy = self.proxy().await?;
-        let status = proxy.playback_status().await?;
+        let proxy_playback_status = proxy.playback_status().await?;
+        let playback_status = PlaybackStatus::parse(&proxy_playback_status);
 
-        Ok(PlaybackStatus::parse(&status))
+        Ok(playback_status)
     }
 
-    pub async fn choose_player(targets: &[String]) -> zbus::Result<String> {
-        let players = Self::find_players().await?;
+    pub async fn choose_player(
+        targets: &[String],
+    ) -> zbus::Result<Option<String>> {
+        let connection = Connection::session().await?;
+        let players = Self::find_players_on(&connection).await?;
 
         let mut players_with_status = Vec::new();
+
         for player in &players {
-            let client = Self::connect(player).await?;
-            let status = client.get_playback_status().await?;
+            let Ok(client) = Self::with_connection(connection.clone(), player) else {
+                continue;
+            };
+
+            let Ok(status) = client.get_playback_status().await else {
+                continue;
+            };
+
             players_with_status.push((player, status));
         }
 
-        Ok(Self::select_player(&players_with_status, targets))
+        let player = Self::select_player(&players_with_status, targets);
+
+        Ok(player)
     }
 
     fn select_player(
         players_with_status: &[(&String, PlaybackStatus)],
         targets: &[String],
-    ) -> String {
+    ) -> Option<String> {
+        for target in targets {
+            if let Some((player, _)) = players_with_status
+                .iter()
+                .find(|(player, _)| *player == target)
+            {
+                return Some(player.to_string());
+            }
+        }
+
         for status in [
             PlaybackStatus::Playing,
             PlaybackStatus::Paused,
             PlaybackStatus::Stopped,
         ] {
-            let matching_players = players_with_status
+            if let Some((player, _)) = players_with_status
                 .iter()
-                .filter(|(_, player_status)| player_status == &status);
-
-            for target in targets {
-                if let Some((player, _)) = matching_players
-                    .clone()
-                    .find(|(player, _)| *player == target)
-                {
-                    return player.to_string();
-                }
-            }
-
-            if let Some((player, _)) = matching_players.into_iter().next() {
-                return player.to_string();
+                .find(|(_, player_status)| player_status == &status)
+            {
+                return Some(player.to_string());
             }
         }
 
-        players_with_status[0].0.to_string()
+        players_with_status
+            .first()
+            .map(|(player, _)| player.to_string())
     }
 
     pub async fn execute(&self, command: PlaybackCommand) -> zbus::Result<()> {
@@ -147,27 +181,32 @@ impl MprisClient {
             PlaybackCommand::Next => proxy.next().await?,
             PlaybackCommand::Previous => proxy.previous().await?,
             PlaybackCommand::Seek(offset) => {
-                proxy.seek(offset.num_microseconds().unwrap_or(0)).await?
+                let offset = offset.num_microseconds().ok_or_else(|| {
+                    zbus::Error::Failure("Seek offset is out of range".into())
+                })?;
+                proxy.seek(offset).await?
             }
             PlaybackCommand::SetPosition(position) => {
                 let track = self.get_current_track().await?;
-                let track_id = track
-                    .id
-                    .as_ref()
-                    .ok_or_else(|| zbus::Error::Failure("missing track id".into()))?;
+                let track_id = track.id.as_ref().ok_or_else(|| {
+                    zbus::Error::Failure("Missing track id".into())
+                })?;
 
-                proxy
-                    .set_position(track_id, position.num_microseconds().unwrap_or(0))
-                    .await?
+                let position =
+                    position.num_microseconds().ok_or_else(|| {
+                        zbus::Error::Failure("Position is out of range".into())
+                    })?;
+
+                proxy.set_position(track_id, position).await?
             }
         }
 
         Ok(())
     }
 
-    // pub async fn events(&self) -> zbus::Result<Pin<Box<dyn Stream<Item =
-    // PlayerEvent> + '_>>> {
-    pub async fn events(&self) -> zbus::Result<impl Stream<Item = PlayerEvent>> {
+    pub async fn events(
+        &self,
+    ) -> zbus::Result<impl Stream<Item = PlayerEvent>> {
         let properties_proxy = PropertiesProxy::builder(&self.connection)
             .destination(&self.service)?
             .path("/org/mpris/MediaPlayer2")?
@@ -180,13 +219,14 @@ impl MprisClient {
             .build()
             .await?;
 
-        let mut properties = properties_proxy.receive_properties_changed().await?;
-        let mut seeked = player_proxy.receive_seeked().await?;
+        let mut properties_event =
+            properties_proxy.receive_properties_changed().await?;
+        let mut seeked_event = player_proxy.receive_seeked().await?;
 
         let output = stream! {
             loop {
                 tokio::select! {
-                    Some(signal) = properties.next() => {
+                    Some(signal) = properties_event.next() => {
                         let Ok(args) = signal.args() else {
                             continue;
                         };
@@ -205,7 +245,7 @@ impl MprisClient {
                         }
                     }
 
-                    Some(signal) = seeked.next() => {
+                    Some(signal) = seeked_event.next() => {
                         let Ok(args) = signal.args() else {
                             continue;
                         };

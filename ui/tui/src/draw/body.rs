@@ -162,9 +162,9 @@ fn highlight_lines(
 
     for &index in selected_indices {
         if let Some(line) = lines.get_mut(index) {
-            *line = line
-                .clone()
-                .patch_style(Style::default().add_modifier(Modifier::UNDERLINED));
+            *line = line.clone().patch_style(
+                Style::default().add_modifier(Modifier::UNDERLINED),
+            );
         }
     }
 }

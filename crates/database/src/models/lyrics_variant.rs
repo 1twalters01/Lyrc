@@ -91,7 +91,10 @@ impl LyricsVariantRow {
         .await
     }
 
-    pub async fn insert_force(&self, pool: &Pool<Sqlite>) -> Result<(), sqlx::Error> {
+    pub async fn insert_force(
+        &self,
+        pool: &Pool<Sqlite>,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
                 INSERT INTO lyrics_variant (
@@ -132,7 +135,10 @@ impl LyricsVariantRow {
         Ok(res.last_insert_rowid())
     }
 
-    pub async fn delete(pool: &Pool<Sqlite>, id: i64) -> Result<bool, sqlx::Error> {
+    pub async fn delete(
+        pool: &Pool<Sqlite>,
+        id: i64,
+    ) -> Result<bool, sqlx::Error> {
         let result = sqlx::query!(
             r#"
                 DELETE FROM lyrics_variant

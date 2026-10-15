@@ -21,49 +21,54 @@ where
         changes.sort_by_key(|c| std::cmp::Reverse(c.old_index));
 
         match &mut self.state.subtitle_documents.active_mut() {
-            Some(subtitle_document_state) => match &mut subtitle_document_state.document.cues {
-                SubtitleCues::Word(cues) => {
-                    let mut items = Vec::new();
-                    for change in changes {
-                        let mut item = cues.remove(change.old_index);
+            Some(subtitle_document_state) => {
+                match &mut subtitle_document_state.document.cues {
+                    SubtitleCues::Word(cues) => {
+                        let mut items = Vec::new();
+                        for change in changes {
+                            let mut item = cues.remove(change.old_index);
 
-                        item.start = change.new_start;
-                        item.end = change.new_end;
+                            item.start = change.new_start;
+                            item.end = change.new_end;
 
-                        items.push((change.new_index, item));
+                            items.push((change.new_index, item));
+                        }
+
+                        items.sort_by_key(|(index, _)| *index);
+
+                        for (index, item) in items {
+                            cues.insert(index, item);
+                        }
                     }
+                    SubtitleCues::Cue(cues) => {
+                        let mut items = Vec::new();
+                        for change in changes {
+                            let mut item = cues.remove(change.old_index);
 
-                    items.sort_by_key(|(index, _)| *index);
+                            item.start = change.new_start;
+                            item.end = change.new_end;
 
-                    for (index, item) in items {
-                        cues.insert(index, item);
+                            items.push((change.new_index, item));
+                        }
+
+                        items.sort_by_key(|(index, _)| *index);
+
+                        for (index, item) in items {
+                            cues.insert(index, item);
+                        }
                     }
+                    SubtitleCues::Line(_) => return,
+                    SubtitleCues::None => return,
                 }
-                SubtitleCues::Cue(cues) => {
-                    let mut items = Vec::new();
-                    for change in changes {
-                        let mut item = cues.remove(change.old_index);
-
-                        item.start = change.new_start;
-                        item.end = change.new_end;
-
-                        items.push((change.new_index, item));
-                    }
-
-                    items.sort_by_key(|(index, _)| *index);
-
-                    for (index, item) in items {
-                        cues.insert(index, item);
-                    }
-                }
-                SubtitleCues::Line(_) => return,
-                SubtitleCues::None => return,
-            },
+            }
             None => self.switch_to_normal_mode(),
         }
     }
 
-    pub fn set_current_cue_start_time(&mut self, new_position: Duration) -> Result<(), String> {
+    pub fn set_current_cue_start_time(
+        &mut self,
+        new_position: Duration,
+    ) -> Result<(), String> {
         let has_words = self
             .state
             .subtitle_documents
@@ -86,7 +91,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index + 1 < cues.len()
-                            && &cues[*cue_index].start > &cues[*cue_index + 1].start
+                            && &cues[*cue_index].start
+                                > &cues[*cue_index + 1].start
                         {
                             cues.swap(*cue_index, *cue_index + 1);
 
@@ -95,8 +101,9 @@ where
 
                         if cues[*cue_index].start > cues[*cue_index].end {
                             let start = cues[*cue_index].start;
-                            if let Some(next) =
-                                cues[*cue_index + 1..].iter().find(|cue| cue.start > start)
+                            if let Some(next) = cues[*cue_index + 1..]
+                                .iter()
+                                .find(|cue| cue.start > start)
                             {
                                 cues[*cue_index].end = next.start;
                             }
@@ -105,7 +112,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index > 0
-                            && &cues[*cue_index].start < &cues[*cue_index - 1].start
+                            && &cues[*cue_index].start
+                                < &cues[*cue_index - 1].start
                         {
                             cues.swap(*cue_index, *cue_index - 1);
 
@@ -121,7 +129,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index + 1 < cues.len()
-                            && &cues[*cue_index].start > &cues[*cue_index + 1].start
+                            && &cues[*cue_index].start
+                                > &cues[*cue_index + 1].start
                         {
                             cues.swap(*cue_index, *cue_index + 1);
 
@@ -130,8 +139,9 @@ where
 
                         if cues[*cue_index].start > cues[*cue_index].end {
                             let start = cues[*cue_index].start;
-                            if let Some(next) =
-                                cues[*cue_index + 1..].iter().find(|cue| cue.start > start)
+                            if let Some(next) = cues[*cue_index + 1..]
+                                .iter()
+                                .find(|cue| cue.start > start)
                             {
                                 cues[*cue_index].end = next.start;
                             }
@@ -140,7 +150,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index > 0
-                            && &cues[*cue_index].start < &cues[*cue_index - 1].start
+                            && &cues[*cue_index].start
+                                < &cues[*cue_index - 1].start
                         {
                             cues.swap(*cue_index, *cue_index - 1);
 
@@ -186,7 +197,8 @@ where
                             }
                         }
 
-                        let new_cursor = SelectCursor::new(new_cue_index, has_words);
+                        let new_cursor =
+                            SelectCursor::new(new_cue_index, has_words);
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -211,12 +223,15 @@ where
                             } else if new_cue_index + 1 > selected_cue.index
                                 && old_cue_index <= selected_cue.index
                             {
-                                selected_cue.index = selected_cue.index.saturating_sub(1);
+                                selected_cue.index =
+                                    selected_cue.index.saturating_sub(1);
                             }
                         }
 
-                        let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = EditCursor::new(new_cue_index, line_length);
+                        let line_length =
+                            document_state.document.cues.cue_len(new_cue_index);
+                        let new_cursor =
+                            EditCursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -230,7 +245,10 @@ where
         }
     }
 
-    pub fn set_current_cue_end_time(&mut self, new_position: Duration) -> Result<(), String> {
+    pub fn set_current_cue_end_time(
+        &mut self,
+        new_position: Duration,
+    ) -> Result<(), String> {
         let has_words = self
             .state
             .subtitle_documents
@@ -314,8 +332,10 @@ where
                             new_position,
                             track,
                         );
-                        let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = EditCursor::new(new_cue_index, line_length);
+                        let line_length =
+                            document_state.document.cues.cue_len(new_cue_index);
+                        let new_cursor =
+                            EditCursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -355,7 +375,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index + 1 < cues.len()
-                            && &cues[*cue_index].start > &cues[*cue_index + 1].start
+                            && &cues[*cue_index].start
+                                > &cues[*cue_index + 1].start
                         {
                             cues.swap(*cue_index, *cue_index + 1);
 
@@ -364,8 +385,9 @@ where
 
                         if cues[*cue_index].start > cues[*cue_index].end {
                             let start = cues[*cue_index].start;
-                            if let Some(next) =
-                                cues[*cue_index + 1..].iter().find(|cue| cue.start > start)
+                            if let Some(next) = cues[*cue_index + 1..]
+                                .iter()
+                                .find(|cue| cue.start > start)
                             {
                                 cues[*cue_index].end = next.start;
                             }
@@ -380,7 +402,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index + 1 < cues.len()
-                            && &cues[*cue_index].start > &cues[*cue_index + 1].start
+                            && &cues[*cue_index].start
+                                > &cues[*cue_index + 1].start
                         {
                             cues.swap(*cue_index, *cue_index + 1);
 
@@ -389,8 +412,9 @@ where
 
                         if cues[*cue_index].start > cues[*cue_index].end {
                             let start = cues[*cue_index].start;
-                            if let Some(next) =
-                                cues[*cue_index + 1..].iter().find(|cue| cue.start > start)
+                            if let Some(next) = cues[*cue_index + 1..]
+                                .iter()
+                                .find(|cue| cue.start > start)
                             {
                                 cues[*cue_index].end = next.start;
                             }
@@ -435,7 +459,8 @@ where
                             }
                         }
 
-                        let new_cursor = SelectCursor::new(new_cue_index, has_words);
+                        let new_cursor =
+                            SelectCursor::new(new_cue_index, has_words);
 
                         AppMode::Select {
                             cursor: new_cursor,
@@ -460,12 +485,15 @@ where
                             } else if new_cue_index + 1 > selected_cue.index
                                 && old_cue_index <= selected_cue.index
                             {
-                                selected_cue.index = selected_cue.index.saturating_sub(1);
+                                selected_cue.index =
+                                    selected_cue.index.saturating_sub(1);
                             }
                         }
 
-                        let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = EditCursor::new(new_cue_index, line_length);
+                        let line_length =
+                            document_state.document.cues.cue_len(new_cue_index);
+                        let new_cursor =
+                            EditCursor::new(new_cue_index, line_length);
 
                         AppMode::Edit {
                             cursor: new_cursor,
@@ -556,8 +584,10 @@ where
                             forwards_cue_increment,
                             track,
                         );
-                        let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = EditCursor::new(new_cue_index, line_length);
+                        let line_length =
+                            document_state.document.cues.cue_len(new_cue_index);
+                        let new_cursor =
+                            EditCursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
@@ -596,7 +626,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index > 0
-                            && &cues[*cue_index].start < &cues[*cue_index - 1].start
+                            && &cues[*cue_index].start
+                                < &cues[*cue_index - 1].start
                         {
                             cues.swap(*cue_index, *cue_index - 1);
 
@@ -612,7 +643,8 @@ where
                         current_cue.start = new_start;
 
                         while *cue_index > 0
-                            && &cues[*cue_index].start < &cues[*cue_index - 1].start
+                            && &cues[*cue_index].start
+                                < &cues[*cue_index - 1].start
                         {
                             cues.swap(*cue_index, *cue_index - 1);
 
@@ -656,8 +688,10 @@ where
                             &mut cursor.cue_index,
                             backwards_cue_increment,
                         );
-                        let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = EditCursor::new(new_cue_index, line_length);
+                        let line_length =
+                            document_state.document.cues.cue_len(new_cue_index);
+                        let new_cursor =
+                            EditCursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
@@ -748,8 +782,10 @@ where
                             &mut cursor.cue_index,
                             backwards_cue_increment,
                         );
-                        let line_length = document_state.document.cues.cue_len(new_cue_index);
-                        let new_cursor = EditCursor::new(new_cue_index, line_length);
+                        let line_length =
+                            document_state.document.cues.cue_len(new_cue_index);
+                        let new_cursor =
+                            EditCursor::new(new_cue_index, line_length);
                         AppMode::Edit {
                             cursor: new_cursor,
                             selected_cues: selected_cues.clone(),
@@ -763,97 +799,116 @@ where
         }
     }
 
-    pub fn increase_all_cue_start_times(&mut self, forwards_cue_increment: Duration) {
+    pub fn increase_all_cue_start_times(
+        &mut self,
+        forwards_cue_increment: Duration,
+    ) {
         match (
             &mut self.state.subtitle_documents.active_mut(),
             &self.state.track,
         ) {
-            (Some(document_state), Some(track)) => match &mut document_state.document.cues {
-                SubtitleCues::Word(cues) => {
-                    for i in 0..cues.len() {
-                        let cue = &mut cues[i];
-                        let new_start = cue.start + forwards_cue_increment;
+            (Some(document_state), Some(track)) => {
+                match &mut document_state.document.cues {
+                    SubtitleCues::Word(cues) => {
+                        for i in 0..cues.len() {
+                            let cue = &mut cues[i];
+                            let new_start = cue.start + forwards_cue_increment;
 
-                        if new_start <= track.duration {
-                            cue.start = new_start;
-                        }
+                            if new_start <= track.duration {
+                                cue.start = new_start;
+                            }
 
-                        if cue.start > cue.end {
-                            let start = cue.start;
-                            if let Some(next) = cues[i + 1..].iter().find(|cue| cue.start > start) {
-                                cues[i].end = next.start;
+                            if cue.start > cue.end {
+                                let start = cue.start;
+                                if let Some(next) = cues[i + 1..]
+                                    .iter()
+                                    .find(|cue| cue.start > start)
+                                {
+                                    cues[i].end = next.start;
+                                }
                             }
                         }
+
+                        cues.sort_by_key(|cue| cue.start);
                     }
+                    SubtitleCues::Cue(cues) => {
+                        for i in 0..cues.len() {
+                            let cue = &mut cues[i];
+                            let new_start = cue.start + forwards_cue_increment;
 
-                    cues.sort_by_key(|cue| cue.start);
-                }
-                SubtitleCues::Cue(cues) => {
-                    for i in 0..cues.len() {
-                        let cue = &mut cues[i];
-                        let new_start = cue.start + forwards_cue_increment;
+                            if new_start <= track.duration {
+                                cue.start = new_start;
+                            }
 
-                        if new_start <= track.duration {
-                            cue.start = new_start;
-                        }
-
-                        if cue.start > cue.end {
-                            let start = cue.start;
-                            if let Some(next) = cues[i + 1..].iter().find(|cue| cue.start > start) {
-                                cues[i].end = next.start;
+                            if cue.start > cue.end {
+                                let start = cue.start;
+                                if let Some(next) = cues[i + 1..]
+                                    .iter()
+                                    .find(|cue| cue.start > start)
+                                {
+                                    cues[i].end = next.start;
+                                }
                             }
                         }
-                    }
 
-                    cues.sort_by_key(|cue| cue.start);
+                        cues.sort_by_key(|cue| cue.start);
+                    }
+                    SubtitleCues::Line(_) => {}
+                    SubtitleCues::None => {}
                 }
-                SubtitleCues::Line(_) => {}
-                SubtitleCues::None => {}
-            },
+            }
 
             _ => {}
         }
     }
 
-    pub fn increase_all_cue_end_times(&mut self, forwards_cue_increment: Duration) {
+    pub fn increase_all_cue_end_times(
+        &mut self,
+        forwards_cue_increment: Duration,
+    ) {
         match (
             &mut self.state.subtitle_documents.active_mut(),
             &self.state.track,
         ) {
-            (Some(document_state), Some(track)) => match &mut document_state.document.cues {
-                SubtitleCues::Word(cues) => {
-                    for i in 0..cues.len() {
-                        let cue = &mut cues[i];
-                        let new_end = cue.end + forwards_cue_increment;
+            (Some(document_state), Some(track)) => {
+                match &mut document_state.document.cues {
+                    SubtitleCues::Word(cues) => {
+                        for i in 0..cues.len() {
+                            let cue = &mut cues[i];
+                            let new_end = cue.end + forwards_cue_increment;
 
-                        if new_end <= track.duration {
-                            cue.end = new_end;
+                            if new_end <= track.duration {
+                                cue.end = new_end;
+                            }
                         }
+
+                        cues.sort_by_key(|cue| cue.start);
                     }
+                    SubtitleCues::Cue(cues) => {
+                        for i in 0..cues.len() {
+                            let cue = &mut cues[i];
+                            let new_end = cue.end + forwards_cue_increment;
 
-                    cues.sort_by_key(|cue| cue.start);
-                }
-                SubtitleCues::Cue(cues) => {
-                    for i in 0..cues.len() {
-                        let cue = &mut cues[i];
-                        let new_end = cue.end + forwards_cue_increment;
-
-                        if new_end <= track.duration {
-                            cue.end = new_end;
+                            if new_end <= track.duration {
+                                cue.end = new_end;
+                            }
                         }
-                    }
 
-                    cues.sort_by_key(|cue| cue.start);
+                        cues.sort_by_key(|cue| cue.start);
+                    }
+                    SubtitleCues::Line(_) => {}
+                    SubtitleCues::None => {}
                 }
-                SubtitleCues::Line(_) => {}
-                SubtitleCues::None => {}
-            },
+            }
 
             _ => {}
         }
     }
 
-    pub fn decrease_all_cue_start_times(&mut self, backwards_cue_increment: Duration) {
+    pub fn decrease_all_cue_start_times(
+        &mut self,
+        backwards_cue_increment: Duration,
+    ) {
         match &mut self.state.subtitle_documents.active_mut() {
             Some(document_state) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {
@@ -886,7 +941,10 @@ where
         }
     }
 
-    pub fn decrease_all_cue_end_times(&mut self, backwards_cue_increment: Duration) {
+    pub fn decrease_all_cue_end_times(
+        &mut self,
+        backwards_cue_increment: Duration,
+    ) {
         match &mut self.state.subtitle_documents.active_mut() {
             Some(document_state) => match &mut document_state.document.cues {
                 SubtitleCues::Word(cues) => {

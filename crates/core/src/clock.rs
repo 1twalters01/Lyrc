@@ -30,7 +30,9 @@ impl PlaybackClock {
 
     pub fn get_position(&self) -> Option<Duration> {
         match self.last_position {
-            Some(last_position) => Some(last_position + self.interpolated_duration + self.offset),
+            Some(last_position) => {
+                Some(last_position + self.interpolated_duration + self.offset)
+            }
             None => None,
         }
     }

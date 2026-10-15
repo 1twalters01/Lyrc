@@ -1,18 +1,17 @@
-// use core::convert::From;
 use std::{path::PathBuf, str::FromStr};
 
 use configuration::config::Config;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use downloader::{models::LyricsFormat, service::DownloadService};
+use downloader::service::DownloadService;
 use lyrc_core::{
     app::App,
     modal::{Modal, ModalError, ModalOption},
     renderer::Renderer,
-    state::{SubtitleDocumentState, SubtitleVariant},
+    state::SubtitleVariant,
 };
 use mpris::client::MprisClient;
 use subtitles::{
-    formats::lrc::parser::LrcParser, language::Language, parser::SubtitleParser,
+    language::Language,
     subtitles::SyncLevel,
 };
 
@@ -24,7 +23,9 @@ pub async fn handle_key<R: Renderer>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     match modal {
         Modal::Selection { options, new_modal } => match key.code {
-            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                app.state.quit = true
+            }
             KeyCode::Esc => app.state.modal = None,
 
             KeyCode::Up => {
@@ -36,11 +37,14 @@ pub async fn handle_key<R: Renderer>(
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
-                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                    None => {
+                        Vec::from([ModalOption::Player, ModalOption::Download])
+                    }
                 };
                 app.state.modal = match new_modal {
                     ModalOption::Player => Some(Modal::Selection {
-                        new_modal: if options.contains(&ModalOption::Alignment) {
+                        new_modal: if options.contains(&ModalOption::Alignment)
+                        {
                             ModalOption::Translate
                         } else {
                             ModalOption::Download
@@ -56,7 +60,8 @@ pub async fn handle_key<R: Renderer>(
                         options,
                     }),
                     ModalOption::Alignment => Some(Modal::Selection {
-                        new_modal: if options.contains(&ModalOption::Translate) {
+                        new_modal: if options.contains(&ModalOption::Translate)
+                        {
                             ModalOption::Save
                         } else {
                             ModalOption::Player
@@ -82,7 +87,9 @@ pub async fn handle_key<R: Renderer>(
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
-                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                    None => {
+                        Vec::from([ModalOption::Player, ModalOption::Download])
+                    }
                 };
                 app.state.modal = match new_modal {
                     ModalOption::Player => Some(Modal::Selection {
@@ -90,7 +97,8 @@ pub async fn handle_key<R: Renderer>(
                         options,
                     }),
                     ModalOption::Download => Some(Modal::Selection {
-                        new_modal: if options.contains(&ModalOption::Translate) {
+                        new_modal: if options.contains(&ModalOption::Translate)
+                        {
                             ModalOption::Save
                         } else {
                             ModalOption::Player
@@ -98,7 +106,8 @@ pub async fn handle_key<R: Renderer>(
                         options,
                     }),
                     ModalOption::Save => Some(Modal::Selection {
-                        new_modal: if options.contains(&ModalOption::Alignment) {
+                        new_modal: if options.contains(&ModalOption::Alignment)
+                        {
                             ModalOption::Alignment
                         } else {
                             ModalOption::Player
@@ -106,7 +115,8 @@ pub async fn handle_key<R: Renderer>(
                         options,
                     }),
                     ModalOption::Alignment => Some(Modal::Selection {
-                        new_modal: if options.contains(&ModalOption::Translate) {
+                        new_modal: if options.contains(&ModalOption::Translate)
+                        {
                             ModalOption::Translate
                         } else {
                             ModalOption::Player
@@ -131,13 +141,16 @@ pub async fn handle_key<R: Renderer>(
                 ModalOption::Download => {
                     app.state.modal = Some(Modal::Download {
                         providers: DownloadService::get_providers(config),
-                        new_provider: DownloadService::get_prefered_provider(config),
+                        new_provider: DownloadService::get_prefered_provider(
+                            config,
+                        ),
                         error: None,
                     })
                 }
                 ModalOption::Save => {
                     let input = match app.state.subtitle_documents.active() {
-                        Some(state) => match &state.document.metadata.file_path {
+                        Some(state) => match &state.document.metadata.file_path
+                        {
                             Some(path) => path
                                 .clone()
                                 .into_os_string()
@@ -182,7 +195,9 @@ pub async fn handle_key<R: Renderer>(
             new_player,
             error,
         } => match key.code {
-            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                app.state.quit = true
+            }
             KeyCode::Esc => {
                 let options = match app.state.subtitle_documents.active() {
                     Some(_) => Vec::from([
@@ -192,7 +207,9 @@ pub async fn handle_key<R: Renderer>(
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
-                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                    None => {
+                        Vec::from([ModalOption::Player, ModalOption::Download])
+                    }
                 };
                 app.state.modal = Some(Modal::Selection {
                     options,
@@ -209,15 +226,16 @@ pub async fn handle_key<R: Renderer>(
             }
 
             KeyCode::Up => {
-                let next_player =
-                    if let Some(idx) = players.iter().position(|p| Some(p.clone()) == new_player) {
-                        match players.get(idx + 1) {
-                            Some(player) => Some(player),
-                            None => players.first(),
-                        }
-                    } else {
-                        players.last()
-                    };
+                let next_player = if let Some(idx) =
+                    players.iter().position(|p| Some(p.clone()) == new_player)
+                {
+                    match players.get(idx + 1) {
+                        Some(player) => Some(player),
+                        None => players.first(),
+                    }
+                } else {
+                    players.last()
+                };
                 app.state.modal = Some(Modal::Player {
                     players: players.clone(),
                     new_player: next_player.cloned(),
@@ -225,15 +243,16 @@ pub async fn handle_key<R: Renderer>(
                 })
             }
             KeyCode::Down => {
-                let next_player =
-                    if let Some(idx) = players.iter().position(|p| Some(p.clone()) == new_player) {
-                        match players.get(idx - 1) {
-                            Some(player) => Some(player),
-                            None => players.last(),
-                        }
-                    } else {
-                        players.first()
-                    };
+                let next_player = if let Some(idx) =
+                    players.iter().position(|p| Some(p.clone()) == new_player)
+                {
+                    match players.get(idx - 1) {
+                        Some(player) => Some(player),
+                        None => players.last(),
+                    }
+                } else {
+                    players.first()
+                };
                 app.state.modal = Some(Modal::Player {
                     players: players.clone(),
                     new_player: next_player.cloned(),
@@ -243,7 +262,8 @@ pub async fn handle_key<R: Renderer>(
 
             KeyCode::Enter => {
                 if let Some(player) = new_player {
-                    app.mpris_client = MprisClient::connect(&player).await?;
+                    app.mpris_client =
+                        Some(MprisClient::connect(&player).await?);
                     app.update_track().await;
                     app.state.subtitle_documents.clear_cache();
                     app.update_subtitle_document().await;
@@ -256,7 +276,9 @@ pub async fn handle_key<R: Renderer>(
             new_provider,
             error,
         } => match key.code {
-            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                app.state.quit = true
+            }
             KeyCode::Esc => {
                 let options = match app.state.subtitle_documents.active() {
                     Some(_) => Vec::from([
@@ -266,7 +288,9 @@ pub async fn handle_key<R: Renderer>(
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
-                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                    None => {
+                        Vec::from([ModalOption::Player, ModalOption::Download])
+                    }
                 };
                 app.state.modal = Some(Modal::Selection {
                     new_modal: if options.contains(&ModalOption::Translate) {
@@ -304,7 +328,7 @@ pub async fn handle_key<R: Renderer>(
                 if let Some(track) = track {
                     app.start_download(track, new_provider).await?
                 }
-            },
+            }
 
             _ => {}
         },
@@ -313,7 +337,9 @@ pub async fn handle_key<R: Renderer>(
             mut column,
             mut error,
         } => match key.code {
-            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                app.state.quit = true
+            }
             KeyCode::Esc => {
                 let options = match app.state.subtitle_documents.active() {
                     Some(_) => Vec::from([
@@ -323,7 +349,9 @@ pub async fn handle_key<R: Renderer>(
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
-                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                    None => {
+                        Vec::from([ModalOption::Player, ModalOption::Download])
+                    }
                 };
                 app.state.modal = Some(Modal::Selection {
                     new_modal: if options.contains(&ModalOption::Translate) {
@@ -450,7 +478,9 @@ pub async fn handle_key<R: Renderer>(
             mut new_variant,
             mut error,
         } => match key.code {
-            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                app.state.quit = true
+            }
             KeyCode::Esc => {
                 let options = match app.state.subtitle_documents.active() {
                     Some(_) => Vec::from([
@@ -460,7 +490,9 @@ pub async fn handle_key<R: Renderer>(
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
-                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                    None => {
+                        Vec::from([ModalOption::Player, ModalOption::Download])
+                    }
                 };
                 app.state.modal = Some(Modal::Selection {
                     new_modal: if options.contains(&ModalOption::Translate) {
@@ -523,9 +555,11 @@ pub async fn handle_key<R: Renderer>(
                             }
                         }
                         SubtitleVariant::Translated(language) => {
-                            let variant = SubtitleVariant::Translated(language.clone());
+                            let variant =
+                                SubtitleVariant::Translated(language.clone());
 
-                            if app.state.subtitle_documents.set_variant(variant) {
+                            if app.state.subtitle_documents.set_variant(variant)
+                            {
                                 app.state.modal = None;
                             } else {
                                 app.start_translation(language).await?;
@@ -541,7 +575,9 @@ pub async fn handle_key<R: Renderer>(
             new_alignment,
             error,
         } => match key.code {
-            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => app.state.quit = true,
+            KeyCode::Char('c') if key.modifiers == KeyModifiers::CONTROL => {
+                app.state.quit = true
+            }
             KeyCode::Esc => {
                 let options = match app.state.subtitle_documents.active() {
                     Some(_) => Vec::from([
@@ -551,7 +587,9 @@ pub async fn handle_key<R: Renderer>(
                         ModalOption::Alignment,
                         ModalOption::Translate,
                     ]),
-                    None => Vec::from([ModalOption::Player, ModalOption::Download]),
+                    None => {
+                        Vec::from([ModalOption::Player, ModalOption::Download])
+                    }
                 };
                 app.state.modal = Some(Modal::Selection {
                     new_modal: if options.contains(&ModalOption::Translate) {
@@ -584,18 +622,24 @@ pub async fn handle_key<R: Renderer>(
                     .map(|state| state.document.sync_level())
                     .unwrap_or(SyncLevel::None);
 
-                let Some(variant) = app.state.subtitle_documents.active_variant() else {
+                let Some(variant) =
+                    app.state.subtitle_documents.active_variant()
+                else {
                     return Ok(());
                 };
 
-                if let Some(document_state) = app.state.subtitle_documents.active() {
+                if let Some(document_state) =
+                    app.state.subtitle_documents.active()
+                {
                     app.state
                         .subtitle_documents
                         .insert_cache(variant.clone(), document_state.clone());
                 }
 
                 if new_alignment <= current_alignment {
-                    if let Some(state) = app.state.subtitle_documents.active_mut() {
+                    if let Some(state) =
+                        app.state.subtitle_documents.active_mut()
+                    {
                         state.document.downgrade(new_alignment)?;
                     }
 
@@ -606,18 +650,22 @@ pub async fn handle_key<R: Renderer>(
                 if let Some(cached_document_state) =
                     app.state.subtitle_documents.get_from_cache(&variant)
                 {
-                    let cached_alignment = cached_document_state.document.sync_level();
+                    let cached_alignment =
+                        cached_document_state.document.sync_level();
 
                     if cached_alignment > current_alignment {
-                        app.state
-                            .subtitle_documents
-                            .insert(variant.clone(), cached_document_state.clone());
+                        app.state.subtitle_documents.insert(
+                            variant.clone(),
+                            cached_document_state.clone(),
+                        );
                         current_alignment = cached_alignment
                     }
 
                     if new_alignment <= current_alignment {
                         if new_alignment < current_alignment {
-                            if let Some(state) = app.state.subtitle_documents.active_mut() {
+                            if let Some(state) =
+                                app.state.subtitle_documents.active_mut()
+                            {
                                 state.document.downgrade(new_alignment)?;
                             }
                         }

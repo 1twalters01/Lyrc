@@ -54,14 +54,19 @@ impl Synchronizer for WordSynchronizer {
         subtitle_document: &Option<SubtitleDocument>,
         position: &Option<Duration>,
     ) -> Option<Self::Event> {
-        let (subtitle_document, position) = match (subtitle_document, position) {
-            (Some(subtitle_document), Some(position)) => (subtitle_document, position),
+        let (subtitle_document, position) = match (subtitle_document, position)
+        {
+            (Some(subtitle_document), Some(position)) => {
+                (subtitle_document, position)
+            }
             (_, _) => return None,
         };
 
-        let is_seeking_backwards = self.last_position.is_some_and(|last| position < &last);
+        let is_seeking_backwards =
+            self.last_position.is_some_and(|last| position < &last);
 
-        let mut new_words = Self::get_words_at(&subtitle_document, Some(position));
+        let mut new_words =
+            Self::get_words_at(&subtitle_document, Some(position));
         new_words = if new_words.is_empty() && !is_seeking_backwards {
             self.active_words.clone()
         } else {
@@ -71,7 +76,8 @@ impl Synchronizer for WordSynchronizer {
         self.last_position = Some(position.clone());
 
         if new_words != self.active_words {
-            let old_words = std::mem::replace(&mut self.active_words, new_words);
+            let old_words =
+                std::mem::replace(&mut self.active_words, new_words);
 
             let event = WordSyncEvent::Changed {
                 old_words,
@@ -114,11 +120,11 @@ impl WordSynchronizer {
                     .enumerate()
                     .filter(|(_, cue)| position < &cue.end)
                     .flat_map(|(cue_index, cue)| {
-                        cue.words
-                            .iter()
-                            .enumerate()
-                            .filter_map(move |(word_index, word)| {
-                                if word.start <= *position && *position < word.end {
+                        cue.words.iter().enumerate().filter_map(
+                            move |(word_index, word)| {
+                                if word.start <= *position
+                                    && *position < word.end
+                                {
                                     Some(WordIndex {
                                         cue: cue_index,
                                         word: word_index,
@@ -126,7 +132,8 @@ impl WordSynchronizer {
                                 } else {
                                     None
                                 }
-                            })
+                            },
+                        )
                     })
                     .collect::<Vec<WordIndex>>()
             }

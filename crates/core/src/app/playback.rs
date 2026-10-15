@@ -9,18 +9,30 @@ where
     R: Renderer,
 {
     pub async fn get_current_position(&self) -> Option<Duration> {
-        self.mpris_client.get_current_position().await.ok()
+        if let Some(ref mpris_client) = self.mpris_client {
+            mpris_client.get_current_position().await.ok()
+        } else {
+            None
+        }
     }
 
     pub async fn get_playback_status(&self) -> PlaybackStatus {
-        self.mpris_client
-            .get_playback_status()
-            .await
-            .unwrap_or(PlaybackStatus::Unknown)
+        if let Some(ref mpris_client) = self.mpris_client {
+            return mpris_client
+                .get_playback_status()
+                .await
+                .unwrap_or(PlaybackStatus::Unknown);
+        }
+
+        PlaybackStatus::Unknown
     }
 
-    pub async fn toggle_play_pause(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.mpris_client.execute(PlaybackCommand::Toggle).await?;
+    pub async fn toggle_play_pause(
+        &mut self,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(ref mpris_client) = self.mpris_client {
+            mpris_client.execute(PlaybackCommand::Toggle).await?;
+        }
         Ok(())
     }
 
@@ -28,9 +40,12 @@ where
         &mut self,
         duration: Duration,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.mpris_client
-            .execute(PlaybackCommand::Seek(duration))
-            .await?;
+        if let Some(ref mpris_client) = self.mpris_client {
+            mpris_client
+                .execute(PlaybackCommand::Seek(duration))
+                .await?;
+        }
+
         Ok(())
     }
 
@@ -43,7 +58,8 @@ where
             return Err(String::from("No track was found").into());
         }
 
-        if let Some(ref document_state) = self.state.subtitle_documents.active() {
+        if let Some(ref document_state) = self.state.subtitle_documents.active()
+        {
             if document_state.document.sync_level() == SyncLevel::None {
                 return Ok(());
             }
@@ -51,12 +67,19 @@ where
             let duration = match &document_state.document.cues {
                 SubtitleCues::Word(cues) => cues[cue_index].start,
                 SubtitleCues::Cue(cues) => cues[cue_index].start,
-                SubtitleCues::Line(_) => return Err(String::from("No subtitle times").into()),
-                SubtitleCues::None => return Err(String::from("No subtitle cues").into()),
+                SubtitleCues::Line(_) => {
+                    return Err(String::from("No subtitle times").into());
+                }
+                SubtitleCues::None => {
+                    return Err(String::from("No subtitle cues").into());
+                }
             };
-            self.mpris_client
-                .execute(PlaybackCommand::SetPosition(duration))
-                .await?;
+
+            if let Some(ref mpris_client) = self.mpris_client {
+                mpris_client
+                    .execute(PlaybackCommand::SetPosition(duration))
+                    .await?;
+            }
         } else {
             return Err(String::from("No subtitle_document was found").into());
         }
@@ -73,21 +96,33 @@ where
             return Err(String::from("No track was found").into());
         }
 
-        if let Some(ref document_state) = self.state.subtitle_documents.active() {
+        if let Some(ref document_state) = self.state.subtitle_documents.active()
+        {
             if document_state.document.sync_level() == SyncLevel::None {
                 return Ok(());
             }
 
             let duration = match &document_state.document.cues {
-                SubtitleCues::Word(cues) => cues[cue_index].words[word_index].start,
+                SubtitleCues::Word(cues) => {
+                    cues[cue_index].words[word_index].start
+                }
                 // SubtitleCues::Cue(cues) => cues[cue_index].start,
-                SubtitleCues::Cue(_) => return Err(String::from("No word times").into()),
-                SubtitleCues::Line(_) => return Err(String::from("No subtitle times").into()),
-                SubtitleCues::None => return Err(String::from("No subtitle cues").into()),
+                SubtitleCues::Cue(_) => {
+                    return Err(String::from("No word times").into());
+                }
+                SubtitleCues::Line(_) => {
+                    return Err(String::from("No subtitle times").into());
+                }
+                SubtitleCues::None => {
+                    return Err(String::from("No subtitle cues").into());
+                }
             };
-            self.mpris_client
-                .execute(PlaybackCommand::SetPosition(duration))
-                .await?;
+
+            if let Some(ref mpris_client) = self.mpris_client {
+                mpris_client
+                    .execute(PlaybackCommand::SetPosition(duration))
+                    .await?;
+            }
         } else {
             return Err(String::from("No subtitle_document was found").into());
         }

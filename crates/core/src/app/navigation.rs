@@ -43,7 +43,9 @@ where
 
     // Edit mode should go to previous edit line rather than previous line
     pub fn go_to_previous_line(&mut self) {
-        if self.state.track.is_none() || self.state.subtitle_documents.active().is_none() {
+        if self.state.track.is_none()
+            || self.state.subtitle_documents.active().is_none()
+        {
             self.switch_to_normal_mode();
         }
 
@@ -137,128 +139,146 @@ where
                 cursor,
                 selected_cues,
             } => match &self.state.subtitle_documents.active() {
-                Some(subtitle_document_state) => match &subtitle_document_state.document.cues {
-                    SubtitleCues::Word(cues) => {
-                        let mut new_cursor = cursor.clone();
+                Some(subtitle_document_state) => {
+                    match &subtitle_document_state.document.cues {
+                        SubtitleCues::Word(cues) => {
+                            let mut new_cursor = cursor.clone();
 
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - 1 {
-                            new_index += 1;
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - 1 {
+                                new_index += 1;
+                            }
+
+                            let new_word_count =
+                                if cursor.active_word_index.is_none() {
+                                    None
+                                } else {
+                                    subtitle_document_state
+                                        .document
+                                        .cues
+                                        .word_count(new_index)
+                                };
+
+                            new_cursor.move_down(new_word_count, cues.len());
+
+                            AppMode::Select {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
                         }
+                        SubtitleCues::Cue(cues) => {
+                            let mut new_cursor = cursor.clone();
 
-                        let new_word_count = if cursor.active_word_index.is_none() {
-                            None
-                        } else {
-                            subtitle_document_state.document.cues.word_count(new_index)
-                        };
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - 1 {
+                                new_index += 1;
+                            }
 
-                        new_cursor.move_down(new_word_count, cues.len());
+                            let new_word_count = subtitle_document_state
+                                .document
+                                .cues
+                                .word_count(new_index);
 
-                        AppMode::Select {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
+                            new_cursor.move_down(new_word_count, cues.len());
+
+                            AppMode::Select {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
                         }
+                        SubtitleCues::Line(cues) => {
+                            let mut new_cursor = cursor.clone();
+
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - 1 {
+                                new_index += 1;
+                            }
+
+                            let new_word_count = subtitle_document_state
+                                .document
+                                .cues
+                                .word_count(new_index);
+                            new_cursor.move_down(new_word_count, cues.len());
+
+                            AppMode::Select {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
+                        }
+                        SubtitleCues::None => return,
                     }
-                    SubtitleCues::Cue(cues) => {
-                        let mut new_cursor = cursor.clone();
-
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - 1 {
-                            new_index += 1;
-                        }
-
-                        let new_word_count =
-                            subtitle_document_state.document.cues.word_count(new_index);
-
-                        new_cursor.move_down(new_word_count, cues.len());
-
-                        AppMode::Select {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
-                        }
-                    }
-                    SubtitleCues::Line(cues) => {
-                        let mut new_cursor = cursor.clone();
-
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - 1 {
-                            new_index += 1;
-                        }
-
-                        let new_word_count =
-                            subtitle_document_state.document.cues.word_count(new_index);
-                        new_cursor.move_down(new_word_count, cues.len());
-
-                        AppMode::Select {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
-                        }
-                    }
-                    SubtitleCues::None => return,
-                },
+                }
                 None => AppMode::Normal,
             },
             AppMode::Edit {
                 cursor,
                 selected_cues,
             } => match &self.state.subtitle_documents.active() {
-                Some(subtitle_document_state) => match &subtitle_document_state.document.cues {
-                    SubtitleCues::Word(cues) => {
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - 1 {
-                            new_index += 1;
+                Some(subtitle_document_state) => {
+                    match &subtitle_document_state.document.cues {
+                        SubtitleCues::Word(cues) => {
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - 1 {
+                                new_index += 1;
+                            }
+
+                            let new_line_length = subtitle_document_state
+                                .document
+                                .cues
+                                .cue_len(new_index);
+                            let line_count = cues.len();
+
+                            let mut new_cursor = cursor.clone();
+                            new_cursor.move_down(new_line_length, line_count);
+
+                            AppMode::Edit {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
                         }
+                        SubtitleCues::Cue(cues) => {
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - 1 {
+                                new_index += 1;
+                            }
 
-                        let new_line_length =
-                            subtitle_document_state.document.cues.cue_len(new_index);
-                        let line_count = cues.len();
+                            let new_line_length = subtitle_document_state
+                                .document
+                                .cues
+                                .cue_len(new_index);
+                            let line_count = cues.len();
 
-                        let mut new_cursor = cursor.clone();
-                        new_cursor.move_down(new_line_length, line_count);
+                            let mut new_cursor = cursor.clone();
+                            new_cursor.move_down(new_line_length, line_count);
 
-                        AppMode::Edit {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
+                            AppMode::Edit {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
                         }
+                        SubtitleCues::Line(cues) => {
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - 1 {
+                                new_index += 1;
+                            }
+
+                            let new_line_length = subtitle_document_state
+                                .document
+                                .cues
+                                .cue_len(new_index);
+                            let line_count = cues.len();
+
+                            let mut new_cursor = cursor.clone();
+                            new_cursor.move_down(new_line_length, line_count);
+
+                            AppMode::Edit {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
+                        }
+                        SubtitleCues::None => return,
                     }
-                    SubtitleCues::Cue(cues) => {
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - 1 {
-                            new_index += 1;
-                        }
-
-                        let new_line_length =
-                            subtitle_document_state.document.cues.cue_len(new_index);
-                        let line_count = cues.len();
-
-                        let mut new_cursor = cursor.clone();
-                        new_cursor.move_down(new_line_length, line_count);
-
-                        AppMode::Edit {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
-                        }
-                    }
-                    SubtitleCues::Line(cues) => {
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - 1 {
-                            new_index += 1;
-                        }
-
-                        let new_line_length =
-                            subtitle_document_state.document.cues.cue_len(new_index);
-                        let line_count = cues.len();
-
-                        let mut new_cursor = cursor.clone();
-                        new_cursor.move_down(new_line_length, line_count);
-
-                        AppMode::Edit {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
-                        }
-                    }
-                    SubtitleCues::None => return,
-                },
+                }
                 None => AppMode::Normal,
             },
         };
@@ -267,7 +287,9 @@ where
     }
 
     pub fn go_to_previous_half_page(&mut self) {
-        if self.state.track.is_none() || self.state.subtitle_documents.active().is_none() {
+        if self.state.track.is_none()
+            || self.state.subtitle_documents.active().is_none()
+        {
             self.switch_to_normal_mode();
         }
 
@@ -311,7 +333,10 @@ where
                 selected_cues,
             } => {
                 let new_cue_index = cursor.cue_index.saturating_sub(lines);
-                let line_length = subtitle_document_state.document.cues.cue_len(new_cue_index);
+                let line_length = subtitle_document_state
+                    .document
+                    .cues
+                    .cue_len(new_cue_index);
                 let new_cursor = EditCursor::new(new_cue_index, line_length);
 
                 AppMode::Edit {
@@ -349,7 +374,10 @@ where
                 cursor,
                 selected_cues,
             } => match &self.state.subtitle_documents.active() {
-                Some(subtitle_document_state) => match &subtitle_document_state.document.cues {
+                Some(subtitle_document_state) => match &subtitle_document_state
+                    .document
+                    .cues
+                {
                     SubtitleCues::Word(cues) => {
                         let mut index = cursor.cue_index;
                         if index < cues.len() - lines {
@@ -403,57 +431,71 @@ where
                 cursor,
                 selected_cues,
             } => match &self.state.subtitle_documents.active() {
-                Some(subtitle_document_state) => match &subtitle_document_state.document.cues {
-                    SubtitleCues::Word(cues) => {
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - lines {
-                            new_index += lines;
-                        } else {
-                            new_index = cues.len() - 1;
-                        }
+                Some(subtitle_document_state) => {
+                    match &subtitle_document_state.document.cues {
+                        SubtitleCues::Word(cues) => {
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - lines {
+                                new_index += lines;
+                            } else {
+                                new_index = cues.len() - 1;
+                            }
 
-                        let line_length = subtitle_document_state.document.cues.cue_len(new_index);
-                        let new_cursor = EditCursor::new(new_index, line_length);
+                            let line_length = subtitle_document_state
+                                .document
+                                .cues
+                                .cue_len(new_index);
+                            let new_cursor =
+                                EditCursor::new(new_index, line_length);
 
-                        AppMode::Edit {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
+                            AppMode::Edit {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
                         }
+                        SubtitleCues::Cue(cues) => {
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - lines {
+                                new_index += lines;
+                            } else {
+                                new_index = cues.len() - 1;
+                            }
+
+                            let line_length = subtitle_document_state
+                                .document
+                                .cues
+                                .cue_len(new_index);
+                            let new_cursor =
+                                EditCursor::new(new_index, line_length);
+
+                            AppMode::Edit {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
+                        }
+                        SubtitleCues::Line(cues) => {
+                            let mut new_index = cursor.cue_index;
+                            if new_index < cues.len() - lines {
+                                new_index += lines;
+                            } else {
+                                new_index = cues.len() - 1;
+                            }
+
+                            let line_length = subtitle_document_state
+                                .document
+                                .cues
+                                .cue_len(new_index);
+                            let new_cursor =
+                                EditCursor::new(new_index, line_length);
+
+                            AppMode::Edit {
+                                cursor: new_cursor,
+                                selected_cues: selected_cues.clone(),
+                            }
+                        }
+                        SubtitleCues::None => return,
                     }
-                    SubtitleCues::Cue(cues) => {
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - lines {
-                            new_index += lines;
-                        } else {
-                            new_index = cues.len() - 1;
-                        }
-
-                        let line_length = subtitle_document_state.document.cues.cue_len(new_index);
-                        let new_cursor = EditCursor::new(new_index, line_length);
-
-                        AppMode::Edit {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
-                        }
-                    }
-                    SubtitleCues::Line(cues) => {
-                        let mut new_index = cursor.cue_index;
-                        if new_index < cues.len() - lines {
-                            new_index += lines;
-                        } else {
-                            new_index = cues.len() - 1;
-                        }
-
-                        let line_length = subtitle_document_state.document.cues.cue_len(new_index);
-                        let new_cursor = EditCursor::new(new_index, line_length);
-
-                        AppMode::Edit {
-                            cursor: new_cursor,
-                            selected_cues: selected_cues.clone(),
-                        }
-                    }
-                    SubtitleCues::None => return,
-                },
+                }
                 None => AppMode::Normal,
             },
         };

@@ -9,7 +9,10 @@ pub struct TxtWriter;
 impl SubtitleWriter for TxtWriter {
     type Error = TxtError;
 
-    fn write(&self, subtitle_document: &SubtitleDocument) -> Result<String, Self::Error> {
+    fn write(
+        &self,
+        subtitle_document: &SubtitleDocument,
+    ) -> Result<String, Self::Error> {
         let mut file = String::new();
 
         Self::write_metadata(&subtitle_document.metadata, &mut file);
@@ -31,7 +34,10 @@ impl TxtWriter {
         }
 
         if !subtitle_metadata.artists.is_empty() {
-            file.push_str(&format!("[ar:{}]\n", subtitle_metadata.artists.join(", ")));
+            file.push_str(&format!(
+                "[ar:{}]\n",
+                subtitle_metadata.artists.join(", ")
+            ));
         }
 
         if !subtitle_metadata.languages.is_empty() {
@@ -47,7 +53,10 @@ impl TxtWriter {
         }
     }
 
-    fn write_cues(document: &SubtitleDocument, output: &mut String) -> Result<(), TxtError> {
+    fn write_cues(
+        document: &SubtitleDocument,
+        output: &mut String,
+    ) -> Result<(), TxtError> {
         let lines = match &document.cues {
             SubtitleCues::Word(cues) => cues
                 .iter()

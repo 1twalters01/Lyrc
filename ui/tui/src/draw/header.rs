@@ -2,7 +2,12 @@ use chrono::Duration;
 use lyrc_core::state::AppState;
 use ratatui::{Frame, layout::Rect, widgets::Paragraph};
 
-pub fn draw_header(frame: &mut Frame, area: Rect, state: &AppState, position: Option<Duration>) {
+pub fn draw_header(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AppState,
+    position: Option<Duration>,
+) {
     let track = state.track.as_ref();
     let title = track
         .map(|track| track.title.as_str())
@@ -33,7 +38,8 @@ pub fn draw_header(frame: &mut Frame, area: Rect, state: &AppState, position: Op
         None => String::from("Not Playing"),
     };
 
-    let mut header = format!("{} - {} - {}/{}", title, artist, position_str, duration);
+    let mut header =
+        format!("{} - {} - {}/{}", title, artist, position_str, duration);
     if let Some(document_state) = state.subtitle_documents.active() {
         if document_state.unsaved_changes {
             header.push_str("\nunsaved changes");

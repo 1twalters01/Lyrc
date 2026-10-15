@@ -2,7 +2,7 @@ use configuration::config::Config;
 
 use crate::{
     provider::LyricsDownloader,
-    providers::{lrclib::LrclibProvider, musixmatch::MusixmatchProvider},
+    providers::{lrclib::LrclibDownloader, musixmatch::MusixmatchDownloader},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -21,8 +21,12 @@ impl DownloadService {
 
     pub fn get_provider(&self) -> Box<dyn LyricsDownloader> {
         match self {
-            Self::LibLrc => Box::new(LrclibProvider) as Box<dyn LyricsDownloader>,
-            Self::Musixmatch => Box::new(MusixmatchProvider) as Box<dyn LyricsDownloader>,
+            Self::LibLrc => {
+                Box::new(LrclibDownloader) as Box<dyn LyricsDownloader>
+            }
+            Self::Musixmatch => {
+                Box::new(MusixmatchDownloader) as Box<dyn LyricsDownloader>
+            }
         }
     }
 

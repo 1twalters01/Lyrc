@@ -63,11 +63,12 @@ impl SubtitleDocuments {
 
     // When config option gets added prioritise those
     pub fn select_default(&mut self) {
-        self.active_variant = if self.documents.contains_key(&SubtitleVariant::Original) {
-            Some(SubtitleVariant::Original)
-        } else {
-            None
-        };
+        self.active_variant =
+            if self.documents.contains_key(&SubtitleVariant::Original) {
+                Some(SubtitleVariant::Original)
+            } else {
+                None
+            };
     }
 
     pub fn clear(&mut self) {
@@ -93,11 +94,17 @@ impl SubtitleDocuments {
         }
     }
 
-    pub fn get_from_variant(&self, variant: &SubtitleVariant) -> Option<&SubtitleDocumentState> {
+    pub fn get_from_variant(
+        &self,
+        variant: &SubtitleVariant,
+    ) -> Option<&SubtitleDocumentState> {
         self.documents.get(variant)
     }
 
-    pub fn get_from_cache(&self, variant: &SubtitleVariant) -> Option<&SubtitleDocumentState> {
+    pub fn get_from_cache(
+        &self,
+        variant: &SubtitleVariant,
+    ) -> Option<&SubtitleDocumentState> {
         self.cache.get(variant)
     }
 
@@ -131,7 +138,9 @@ impl SubtitleDocuments {
         document_state: SubtitleDocumentState,
     ) -> bool {
         if let Some(original_state) = self.documents.get(&subtitle_variant) {
-            if original_state.document.sync_level() >= document_state.document.sync_level() {
+            if original_state.document.sync_level()
+                >= document_state.document.sync_level()
+            {
                 return false;
             }
         };
@@ -154,7 +163,9 @@ impl SubtitleDocuments {
         document_state: SubtitleDocumentState,
     ) -> bool {
         if let Some(cache_state) = self.cache.get(&subtitle_variant) {
-            if cache_state.document.sync_level() >= document_state.document.sync_level() {
+            if cache_state.document.sync_level()
+                >= document_state.document.sync_level()
+            {
                 return false;
             }
         }
@@ -266,7 +277,9 @@ impl AppState {
         self.subtitle_documents.select_default();
     }
 
-    fn discover_subtitle_files(track: &Track) -> Vec<(SubtitleVariant, PathBuf)> {
+    fn discover_subtitle_files(
+        track: &Track,
+    ) -> Vec<(SubtitleVariant, PathBuf)> {
         let Some(file_path) = &track.file_path else {
             return Vec::new();
         };
@@ -275,7 +288,8 @@ impl AppState {
             return Vec::new();
         };
 
-        let Some(track_stem) = file_path.file_stem().and_then(|s| s.to_str()) else {
+        let Some(track_stem) = file_path.file_stem().and_then(|s| s.to_str())
+        else {
             return Vec::new();
         };
 
@@ -283,7 +297,10 @@ impl AppState {
             return Vec::new();
         };
 
-        let mut candidates: HashMap<SubtitleVariant, (SubtitleExtension, PathBuf)> = HashMap::new();
+        let mut candidates: HashMap<
+            SubtitleVariant,
+            (SubtitleExtension, PathBuf),
+        > = HashMap::new();
 
         for entry in files.filter_map(Result::ok) {
             let path = entry.path();
@@ -291,7 +308,9 @@ impl AppState {
                 continue;
             }
 
-            let Some((variant, extension)) = classify_subtitle_file(&path, track_stem) else {
+            let Some((variant, extension)) =
+                classify_subtitle_file(&path, track_stem)
+            else {
                 continue;
             };
 

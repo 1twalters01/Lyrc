@@ -1,3 +1,4 @@
 # run with cargo +nightly fmt
 indent_style = "Block"
 wrap_comments = true
+max_width = 80

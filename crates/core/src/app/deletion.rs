@@ -1,6 +1,8 @@
 use subtitles::subtitles::SubtitleCues;
 
-use crate::{app::App, history::IndexedSubtitleCue, mode::AppMode, renderer::Renderer};
+use crate::{
+    app::App, history::IndexedSubtitleCue, mode::AppMode, renderer::Renderer,
+};
 
 impl<R> App<R>
 where
@@ -24,8 +26,10 @@ where
                             if *index < cursor.cue_index {
                                 // cursor.cue_index =
                                 // cursor.cue_index.saturating_sub(1);
-                                let new_word_count =
-                                    cues[cursor.cue_index.saturating_sub(1)].words.len();
+                                let new_word_count = cues
+                                    [cursor.cue_index.saturating_sub(1)]
+                                .words
+                                .len();
 
                                 cursor.move_up(Some(new_word_count));
                             }
@@ -62,13 +66,14 @@ where
                         for cue in selected_cues.iter().rev() {
                             cues.remove(cue.index);
                             if cue.index < cursor.cue_index {
-                                let line_length = cues[cursor.cue_index.saturating_sub(1)]
-                                    .words
-                                    .iter()
-                                    .map(|word| word.content.clone())
-                                    .collect::<Vec<String>>()
-                                    .join(" ")
-                                    .len();
+                                let line_length = cues
+                                    [cursor.cue_index.saturating_sub(1)]
+                                .words
+                                .iter()
+                                .map(|word| word.content.clone())
+                                .collect::<Vec<String>>()
+                                .join(" ")
+                                .len();
                                 cursor.move_up(line_length);
                                 // *cue_index = cue_index.saturating_sub(1);
                             }
@@ -78,8 +83,10 @@ where
                         for cue in selected_cues.iter().rev() {
                             cues.remove(cue.index);
                             if cue.index < cursor.cue_index {
-                                let line_length =
-                                    cues[cursor.cue_index.saturating_sub(1)].content.len();
+                                let line_length = cues
+                                    [cursor.cue_index.saturating_sub(1)]
+                                .content
+                                .len();
                                 cursor.move_up(line_length)
                                 // *cue_index = cue_index.saturating_sub(1);
                             }
@@ -89,8 +96,10 @@ where
                         for cue in selected_cues.iter().rev() {
                             cues.remove(cue.index);
                             if cue.index < cursor.cue_index {
-                                let line_length =
-                                    cues[cursor.cue_index.saturating_sub(1)].content.len();
+                                let line_length = cues
+                                    [cursor.cue_index.saturating_sub(1)]
+                                .content
+                                .len();
                                 cursor.move_up(line_length)
                                 // *cue_index = cue_index.saturating_sub(1);
                             }
@@ -116,15 +125,18 @@ where
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
-                        selected_cues.retain(|c_index| c_index != &cursor.cue_index);
+                        selected_cues
+                            .retain(|c_index| c_index != &cursor.cue_index);
                         cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Cue(cues) => {
-                        selected_cues.retain(|c_index| c_index != &cursor.cue_index);
+                        selected_cues
+                            .retain(|c_index| c_index != &cursor.cue_index);
                         cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Line(cues) => {
-                        selected_cues.retain(|c_index| c_index != &cursor.cue_index);
+                        selected_cues
+                            .retain(|c_index| c_index != &cursor.cue_index);
                         cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::None => {}
@@ -135,15 +147,18 @@ where
                     selected_cues,
                 } => match &mut subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
-                        selected_cues.retain(|cue| cue.index != cursor.cue_index);
+                        selected_cues
+                            .retain(|cue| cue.index != cursor.cue_index);
                         cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Cue(cues) => {
-                        selected_cues.retain(|cue| cue.index != cursor.cue_index);
+                        selected_cues
+                            .retain(|cue| cue.index != cursor.cue_index);
                         cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::Line(cues) => {
-                        selected_cues.retain(|cue| cue.index != cursor.cue_index);
+                        selected_cues
+                            .retain(|cue| cue.index != cursor.cue_index);
                         cues.remove(cursor.cue_index);
                     }
                     SubtitleCues::None => {}
@@ -160,7 +175,10 @@ where
 
         indexed_cues.sort_by_key(|c| c.index);
         match &mut self.state.subtitle_documents.active_mut() {
-            Some(subtitle_document_state) => match &mut subtitle_document_state.document.cues {
+            Some(subtitle_document_state) => match &mut subtitle_document_state
+                .document
+                .cues
+            {
                 SubtitleCues::Word(cues) => {
                     for indexed_cue in indexed_cues.iter().rev() {
                         cues.remove(indexed_cue.index);
@@ -171,7 +189,9 @@ where
                                 cursor,
                                 selected_cues,
                             } => {
-                                selected_cues.retain(|c_index| *c_index != indexed_cue.index);
+                                selected_cues.retain(|c_index| {
+                                    *c_index != indexed_cue.index
+                                });
                                 for selected_cue in selected_cues {
                                     if *selected_cue > indexed_cue.index {
                                         *selected_cue -= 1;
@@ -201,7 +221,9 @@ where
                                 cursor,
                                 selected_cues,
                             } => {
-                                selected_cues.retain(|c_index| *c_index != indexed_cue.index);
+                                selected_cues.retain(|c_index| {
+                                    *c_index != indexed_cue.index
+                                });
                                 for selected_cue in selected_cues {
                                     if *selected_cue > indexed_cue.index {
                                         *selected_cue -= 1;
@@ -231,7 +253,9 @@ where
                                 cursor,
                                 selected_cues,
                             } => {
-                                selected_cues.retain(|c_index| *c_index != indexed_cue.index);
+                                selected_cues.retain(|c_index| {
+                                    *c_index != indexed_cue.index
+                                });
                                 for selected_cue in selected_cues {
                                     if *selected_cue > indexed_cue.index {
                                         *selected_cue -= 1;

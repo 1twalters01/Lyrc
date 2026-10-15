@@ -7,7 +7,8 @@ use tokio::sync::mpsc::Sender;
 use translator::messages::TranslationRequest;
 
 use crate::{
-    clock::PlaybackClock, renderer::Renderer, state::AppState, synchronizer::AppSynchronizer,
+    clock::PlaybackClock, renderer::Renderer, state::AppState,
+    synchronizer::AppSynchronizer,
 };
 
 pub struct App<R>
@@ -19,7 +20,7 @@ where
     pub synchronizer: AppSynchronizer,
     pub clock: PlaybackClock,
     pub state: AppState,
-    pub mpris_client: MprisClient,
+    pub mpris_client: Option<MprisClient>,
     pub download_req_tx: Sender<DownloadRequest>,
     pub translation_req_tx: Sender<TranslationRequest>,
     pub alignment_req_tx: Sender<AlignmentRequest>,
@@ -32,7 +33,7 @@ where
     pub async fn new(
         renderer: R,
         database_service: DatabaseService,
-        player: &str,
+        player: &Option<String>,
         download_req_tx: Sender<DownloadRequest>,
         translation_req_tx: Sender<TranslationRequest>,
         alignment_req_tx: Sender<AlignmentRequest>,
@@ -41,7 +42,11 @@ where
         let synchronizer = AppSynchronizer::new();
         let clock = PlaybackClock::new(config.clock_offset);
         let state = AppState::new();
-        let mpris_client = MprisClient::connect(player).await.unwrap();
+        let mpris_client = if let Some(player) = player {
+            Some(MprisClient::connect(player).await.unwrap())
+        } else {
+            None
+        };
 
         let mut app = Self {
             renderer,

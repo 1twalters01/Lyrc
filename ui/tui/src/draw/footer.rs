@@ -36,7 +36,9 @@ pub fn draw_footer<A: Debug>(
 
     let words = match state.subtitle_documents.active() {
         Some(state) => match &state.document.cues {
-            subtitles::subtitles::SubtitleCues::Word(words) => Some(words[0].clone()),
+            subtitles::subtitles::SubtitleCues::Word(words) => {
+                Some(words[0].clone())
+            }
             _ => None,
         },
         None => None,

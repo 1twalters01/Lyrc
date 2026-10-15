@@ -9,10 +9,14 @@ use crate::{
     provider::LyricsDownloader,
 };
 
-pub struct MusixmatchProvider;
+pub struct MusixmatchDownloader;
 
-impl LyricsDownloader for MusixmatchProvider {
-    fn search(&self, track: Track, locals: TaskLocals) -> BoxFuture<'static, Result<Option<Lyrics>, DownloadError>> {
+impl LyricsDownloader for MusixmatchDownloader {
+    fn search(
+        &self,
+        track: Track,
+        locals: TaskLocals,
+    ) -> BoxFuture<'static, Result<Option<Lyrics>, DownloadError>> {
         let api_key = "load the correct api key from config";
 
         // Load from config or default?
@@ -27,12 +31,18 @@ impl LyricsDownloader for MusixmatchProvider {
                 let datetime = PyModule::import(py, "datetime")?;
 
                 // import modules
-                let service_module = PyModule::import(py, "downloader.service")?;
-                let track_module = PyModule::import(py, "downloader.models.track")?;
-                let provider_module =
-                    PyModule::import(py, "downloader.providers.musixmatch.provider")?;
-                let options_module =
-                    PyModule::import(py, "downloader.providers.musixmatch.options")?;
+                let service_module =
+                    PyModule::import(py, "downloader.service")?;
+                let track_module =
+                    PyModule::import(py, "downloader.models.track")?;
+                let provider_module = PyModule::import(
+                    py,
+                    "downloader.providers.musixmatch.provider",
+                )?;
+                let options_module = PyModule::import(
+                    py,
+                    "downloader.providers.musixmatch.options",
+                )?;
 
                 // get provider dict with lrclib instance inside
                 let client = httpx.getattr("AsyncClient")?.call0()?;
@@ -43,11 +53,9 @@ impl LyricsDownloader for MusixmatchProvider {
                 providers.set_item("musixmatch", musixmatch_downloader)?;
 
                 // Create options
-                let options = options_module.getattr("MusixmatchOptions")?.call1((
-                    duration_tolerance,
-                    page_size,
-                    page,
-                ))?;
+                let options = options_module
+                    .getattr("MusixmatchOptions")?
+                    .call1((duration_tolerance, page_size, page))?;
 
                 // Create instance of lyrics service
                 let lyrics_service = service_module
@@ -68,8 +76,10 @@ impl LyricsDownloader for MusixmatchProvider {
                     timedelta,
                 ))?;
 
-                let coroutine =
-                    lyrics_service.call_method1("search", (py_track, "musixmatch", options))?;
+                let coroutine = lyrics_service.call_method1(
+                    "search",
+                    (py_track, "musixmatch", options),
+                )?;
                 into_future_with_locals(&locals, coroutine)
             })
             .map_err(|e| DownloadError::PythonError { error: e })?;
@@ -85,15 +95,20 @@ impl LyricsDownloader for MusixmatchProvider {
 
                 let lyrics = result.bind(py);
                 let content: String = lyrics.getattr("content")?.extract()?;
-                let py_format: String = lyrics.getattr("format")?.getattr("value")?.extract()?;
-                let py_source: String = lyrics.getattr("source")?.getattr("value")?.extract()?;
+                let py_format: String =
+                    lyrics.getattr("format")?.getattr("value")?.extract()?;
+                let py_source: String =
+                    lyrics.getattr("source")?.getattr("value")?.extract()?;
 
                 let format = match py_format.as_str() {
                     "lrc" => LyricsFormat::Lrc,
                     "text" => LyricsFormat::Text,
                     _ => {
-                        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                            "unknown lyrics format",
+                        return Err(PyErr::new::<
+                            pyo3::exceptions::PyValueError,
+                            _,
+                        >(
+                            "unknown lyrics format"
                         ));
                     }
                 };
@@ -101,8 +116,11 @@ impl LyricsDownloader for MusixmatchProvider {
                     "self" => LyricsSource::Python,
                     "musixmatch" => LyricsSource::Lrclib,
                     _ => {
-                        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                            "unknown lyrics source",
+                        return Err(PyErr::new::<
+                            pyo3::exceptions::PyValueError,
+                            _,
+                        >(
+                            "unknown lyrics source"
                         ));
                     }
                 };

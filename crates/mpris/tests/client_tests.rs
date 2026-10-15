@@ -171,7 +171,8 @@ async fn execute_seek() {
         .await
         .expect("failed to connect to cmus");
 
-    let target_position = Duration::seconds(10) + Duration::microseconds(251000);
+    let target_position =
+        Duration::seconds(10) + Duration::microseconds(251000);
 
     let current_position = client.get_current_position().await.unwrap();
 
@@ -192,7 +193,8 @@ async fn execute_set_position() {
         .await
         .expect("failed to connect to cmus");
 
-    let target_position = Duration::seconds(10) + Duration::microseconds(251000);
+    let target_position =
+        Duration::seconds(10) + Duration::microseconds(251000);
 
     let current_position = client.get_current_position().await.unwrap();
     assert_ne!(current_position, target_position);

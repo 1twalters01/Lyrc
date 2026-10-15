@@ -75,5 +75,6 @@ pub struct CueTimeChange {
 #[derive(Clone)]
 pub struct IndexedSubtitleCue {
     pub index: usize,
-    pub subtitle_cue: SubtitleCues, // Have an enum of just the value, not the vec
+    pub subtitle_cue: SubtitleCues, /* Have an enum of just the value, not
+                                     * the vec */
 }

@@ -44,14 +44,19 @@ impl Synchronizer for CueSynchronizer {
         subtitle_document: &Option<SubtitleDocument>,
         position: &Option<Duration>,
     ) -> Option<Self::Event> {
-        let (subtitle_document, position) = match (subtitle_document, position) {
-            (Some(subtitle_document), Some(position)) => (subtitle_document, position),
+        let (subtitle_document, position) = match (subtitle_document, position)
+        {
+            (Some(subtitle_document), Some(position)) => {
+                (subtitle_document, position)
+            }
             (_, _) => return None,
         };
 
-        let is_seeking_backwards = self.last_position.is_some_and(|last| position <= &last);
+        let is_seeking_backwards =
+            self.last_position.is_some_and(|last| position <= &last);
 
-        let mut new_cues = Self::get_cues_at(&subtitle_document, Some(position));
+        let mut new_cues =
+            Self::get_cues_at(&subtitle_document, Some(position));
         new_cues = if new_cues.is_empty() && !is_seeking_backwards {
             self.active_cues.clone()
         } else {

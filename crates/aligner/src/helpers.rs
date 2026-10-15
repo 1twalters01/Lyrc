@@ -7,7 +7,9 @@ use uuid::Uuid;
 
 use crate::error::AlignmentError;
 
-pub fn timedelta_to_duration(timedelta: &Bound<'_, PyAny>) -> PyResult<Duration> {
+pub fn timedelta_to_duration(
+    timedelta: &Bound<'_, PyAny>,
+) -> PyResult<Duration> {
     let days: i64 = timedelta.getattr("days")?.extract()?;
     let seconds: i64 = timedelta.getattr("seconds")?.extract()?;
     let microseconds: i64 = timedelta.getattr("microseconds")?.extract()?;
@@ -21,7 +23,10 @@ pub fn convert_py_cues_to_line_aligned_subtitle_document(
     py_aligned_cues: Py<PyAny>,
     subtitle_document: SubtitleDocument,
 ) -> Result<Option<SubtitleDocument>, AlignmentError> {
-    let aligned_cues = convert_py_cues_to_line_level_cues(py_aligned_cues, &subtitle_document)?;
+    let aligned_cues = convert_py_cues_to_line_level_cues(
+        py_aligned_cues,
+        &subtitle_document,
+    )?;
 
     let aligned_metadata = generate_aligned_metadata(subtitle_document);
 
@@ -35,7 +40,10 @@ pub fn convert_py_cues_to_word_aligned_subtitle_document(
     py_aligned_cues: Py<PyAny>,
     subtitle_document: SubtitleDocument,
 ) -> Result<Option<SubtitleDocument>, AlignmentError> {
-    let aligned_cues = convert_py_cues_to_word_level_cues(py_aligned_cues, &subtitle_document)?;
+    let aligned_cues = convert_py_cues_to_word_level_cues(
+        py_aligned_cues,
+        &subtitle_document,
+    )?;
 
     let aligned_metadata = generate_aligned_metadata(subtitle_document);
 
@@ -57,7 +65,8 @@ pub fn convert_py_cues_to_word_level_cues(
     };
 
     Python::attach(|py| -> PyResult<SubtitleCues> {
-        let binded_py_aligned_cues = py_aligned_cues.bind(py).cast::<PyList>()?;
+        let binded_py_aligned_cues =
+            py_aligned_cues.bind(py).cast::<PyList>()?;
         let aligned_cues: PyResult<Vec<AlignedCue>> = binded_py_aligned_cues
             .iter()
             .enumerate()
@@ -70,7 +79,9 @@ pub fn convert_py_cues_to_word_level_cues(
                     .iter()
                     .map(|word| {
                         Ok(Word {
-                            start: timedelta_to_duration(&word.getattr("start")?)?,
+                            start: timedelta_to_duration(
+                                &word.getattr("start")?,
+                            )?,
                             end: timedelta_to_duration(&word.getattr("end")?)?,
                             content: word.getattr("text")?.extract()?,
                         })
@@ -104,7 +115,8 @@ pub fn convert_py_cues_to_line_level_cues(
     };
 
     Python::attach(|py| -> PyResult<SubtitleCues> {
-        let binded_py_aligned_cues = py_aligned_cues.bind(py).cast::<PyList>()?;
+        let binded_py_aligned_cues =
+            py_aligned_cues.bind(py).cast::<PyList>()?;
         let aligned_cues: PyResult<Vec<Cue>> = binded_py_aligned_cues
             .iter()
             .enumerate()
@@ -128,7 +140,9 @@ pub fn convert_py_cues_to_line_level_cues(
     .map_err(|e| AlignmentError::PythonError { error: e })
 }
 
-pub fn generate_aligned_metadata(subtitle_document: SubtitleDocument) -> SubtitleMetadata {
+pub fn generate_aligned_metadata(
+    subtitle_document: SubtitleDocument,
+) -> SubtitleMetadata {
     SubtitleMetadata {
         album: subtitle_document.metadata.album,
         title: subtitle_document.metadata.title,

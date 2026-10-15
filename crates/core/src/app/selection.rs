@@ -37,7 +37,9 @@ where
         }
     }
 
-    pub fn toggle_select_all_lines(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn toggle_select_all_lines(
+        &mut self,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if self.state.track.is_none() {
             self.switch_to_normal_mode();
             return Err(String::from("No track found").into());
@@ -54,21 +56,24 @@ where
                 } => match &subtitle_document_state.document.cues {
                     SubtitleCues::Word(cues) => {
                         if selected_cues.is_empty() {
-                            *selected_cues = (0..cues.len()).collect::<Vec<usize>>();
+                            *selected_cues =
+                                (0..cues.len()).collect::<Vec<usize>>();
                         } else {
                             *selected_cues = Vec::new();
                         }
                     }
                     SubtitleCues::Cue(cues) => {
                         if selected_cues.is_empty() {
-                            *selected_cues = (0..cues.len()).collect::<Vec<usize>>();
+                            *selected_cues =
+                                (0..cues.len()).collect::<Vec<usize>>();
                         } else {
                             *selected_cues = Vec::new();
                         }
                     }
                     SubtitleCues::Line(cues) => {
                         if selected_cues.is_empty() {
-                            *selected_cues = (0..cues.len()).collect::<Vec<usize>>();
+                            *selected_cues =
+                                (0..cues.len()).collect::<Vec<usize>>();
                         } else {
                             *selected_cues = Vec::new();
                         }

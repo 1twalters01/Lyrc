@@ -25,7 +25,8 @@ impl SelectCursor {
     }
 
     pub fn move_left(&mut self) {
-        self.active_word_index = self.active_word_index.map(|idx| idx.saturating_sub(1));
+        self.active_word_index =
+            self.active_word_index.map(|idx| idx.saturating_sub(1));
         self.target_word_index = self.active_word_index;
     }
 
@@ -56,7 +57,11 @@ impl SelectCursor {
         );
     }
 
-    pub fn move_down(&mut self, new_word_count: Option<usize>, line_count: usize) {
+    pub fn move_down(
+        &mut self,
+        new_word_count: Option<usize>,
+        line_count: usize,
+    ) {
         self.cue_index = min(
             self.cue_index.saturating_add(1),
             line_count.saturating_sub(1),
@@ -121,7 +126,11 @@ impl EditCursor {
         self.active_column = min(self.target_column, new_line_length);
     }
 
-    pub fn jump_up(&mut self, new_line_length: usize, selected_cues: &BTreeSet<usize>) {
+    pub fn jump_up(
+        &mut self,
+        new_line_length: usize,
+        selected_cues: &BTreeSet<usize>,
+    ) {
         self.cue_index = selected_cues
             .iter()
             .rev()
@@ -131,7 +140,11 @@ impl EditCursor {
         self.active_column = min(self.target_column, new_line_length);
     }
 
-    pub fn jump_down(&mut self, new_line_length: usize, selected_cues: &BTreeSet<usize>) {
+    pub fn jump_down(
+        &mut self,
+        new_line_length: usize,
+        selected_cues: &BTreeSet<usize>,
+    ) {
         self.cue_index = selected_cues
             .iter()
             .find(|&&c| c > self.cue_index)

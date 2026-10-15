@@ -10,7 +10,8 @@ use subtitles::{
 };
 
 use crate::{
-    error::AlignmentError, helpers::convert_py_cues_to_word_aligned_subtitle_document,
+    error::AlignmentError,
+    helpers::convert_py_cues_to_word_aligned_subtitle_document,
     provider::LyricsAligner,
 };
 
@@ -18,6 +19,7 @@ pub struct WhisperXWordAligner;
 
 impl LyricsAligner for WhisperXWordAligner {
     fn align_cues(
+        &self,
         audio_file_path: PathBuf,
         subtitle_document: SubtitleDocument,
     ) -> Result<Option<SubtitleDocument>, AlignmentError> {
@@ -34,9 +36,13 @@ impl LyricsAligner for WhisperXWordAligner {
 
         let device = "cuda"; // Store in Config crate
 
-        let py_aligned_cues = Self::align_cues(&subtitle_document, audio_path, language, device)?;
+        let py_aligned_cues =
+            Self::align_cues(&subtitle_document, audio_path, language, device)?;
 
-        convert_py_cues_to_word_aligned_subtitle_document(py_aligned_cues, subtitle_document)
+        convert_py_cues_to_word_aligned_subtitle_document(
+            py_aligned_cues,
+            subtitle_document,
+        )
     }
 }
 
@@ -52,10 +58,13 @@ impl WhisperXWordAligner {
             let timedelta = datetime.getattr("timedelta")?;
 
             let service_module = PyModule::import(py, "aligner.service")?;
-            let language_module = PyModule::import(py, "aligner.models.language")?;
+            let language_module =
+                PyModule::import(py, "aligner.models.language")?;
             let cue_module = PyModule::import(py, "aligner.models.cue")?;
-            let provider_module = PyModule::import(py, "aligner.whisperx_word.provider")?;
-            let options_module = PyModule::import(py, "aligner.whisperx_word.options")?;
+            let provider_module =
+                PyModule::import(py, "aligner.whisperx_word.provider")?;
+            let options_module =
+                PyModule::import(py, "aligner.whisperx_word.options")?;
 
             let whisperx_aligner = provider_module
                 .getattr("WhisperXWordAligner")?
@@ -80,15 +89,25 @@ impl WhisperXWordAligner {
 
             let lrc_contents = PyList::empty(py);
             match &subtitle_document.cues {
-                SubtitleCues::Word(_) => return Err(AlignmentError::AlreadyAligned),
+                SubtitleCues::Word(_) => {
+                    return Err(AlignmentError::AlreadyAligned);
+                }
                 SubtitleCues::Cue(cues) => {
                     for cue in cues {
-                        let start =
-                            timedelta.call1((0, 0, cue.start.num_microseconds().unwrap_or(0)))?;
-                        let end =
-                            timedelta.call1((0, 0, cue.end.num_microseconds().unwrap_or(0)))?;
+                        let start = timedelta.call1((
+                            0,
+                            0,
+                            cue.start.num_microseconds().unwrap_or(0),
+                        ))?;
+                        let end = timedelta.call1((
+                            0,
+                            0,
+                            cue.end.num_microseconds().unwrap_or(0),
+                        ))?;
                         let content = cue.content.clone();
-                        let py_cue = cue_module.getattr("Cue")?.call1((start, end, content))?;
+                        let py_cue = cue_module
+                            .getattr("Cue")?
+                            .call1((start, end, content))?;
                         lrc_contents.append(py_cue)?;
                     }
                 }
@@ -98,7 +117,8 @@ impl WhisperXWordAligner {
                         lrc_contents.append(content)?;
                     }
                 }
-                // SubtitleCues::None => return Err(TranslationError::NoSubtitles),
+                // SubtitleCues::None => return
+                // Err(TranslationError::NoSubtitles),
                 SubtitleCues::None => {}
             }
 

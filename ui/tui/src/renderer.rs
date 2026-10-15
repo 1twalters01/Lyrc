@@ -1,12 +1,17 @@
 use chrono::Duration;
-use lyrc_core::{renderer::Renderer, state::AppState, synchronizer::ActiveIndex};
+use lyrc_core::{
+    renderer::Renderer, state::AppState, synchronizer::ActiveIndex,
+};
 use std::io::{self, Stdout};
 
 use ratatui::{
     Terminal,
     crossterm::{
         execute,
-        terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+        terminal::{
+            EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+            enable_raw_mode,
+        },
     },
     prelude::CrosstermBackend,
 };

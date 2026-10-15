@@ -1,7 +1,9 @@
 use subtitles::subtitles::{AlignedCue, Cue, Line, SubtitleCues};
 use uuid::Uuid;
 
-use crate::{app::App, history::IndexedSubtitleCue, mode::AppMode, renderer::Renderer};
+use crate::{
+    app::App, history::IndexedSubtitleCue, mode::AppMode, renderer::Renderer,
+};
 
 impl<R> App<R>
 where
@@ -496,7 +498,10 @@ where
 
         indexed_cues.sort_by_key(|c| c.index);
         match &mut self.state.subtitle_documents.active_mut() {
-            Some(subtitle_document_state) => match &mut subtitle_document_state.document.cues {
+            Some(subtitle_document_state) => match &mut subtitle_document_state
+                .document
+                .cues
+            {
                 SubtitleCues::Word(cues) => {
                     for indexed_cue in indexed_cues {
                         match indexed_cue.subtitle_cue {

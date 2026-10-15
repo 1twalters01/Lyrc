@@ -10,13 +10,16 @@ pub async fn handle_keyboard_event<R: Renderer>(
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(modal) = &app.state.modal {
-        return keyboard::modal::handle_key(app, key, modal.clone(), config).await;
+        return keyboard::modal::handle_key(app, key, modal.clone(), config)
+            .await;
     }
 
     match &app.state.app_mode {
-        AppMode::Normal => keyboard::normal::handle_key(app, key, &config).await,
+        AppMode::Normal => {
+            keyboard::normal::handle_key(app, key, &config).await
+        }
         AppMode::Select {
-            cursor,
+            cursor: _,
             selected_cues: _,
         } => keyboard::select::handle_key(app, key, &config).await,
         AppMode::Edit {

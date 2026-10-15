@@ -34,5 +34,9 @@ pub trait Player {
 
     fn seek(&self, offset: i64) -> zbus::Result<()>;
 
-    fn set_position(&self, track_id: &OwnedObjectPath, position: i64) -> zbus::Result<()>;
+    fn set_position(
+        &self,
+        track_id: &OwnedObjectPath,
+        position: i64,
+    ) -> zbus::Result<()>;
 }

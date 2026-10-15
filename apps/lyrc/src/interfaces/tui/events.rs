@@ -15,14 +15,23 @@ pub async fn handle_tui_events(
     mut workers_rx: WorkersRx,
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mpris = app.mpris_client.clone();
-    let mut events = mpris.events().await?;
+    let mpris_client = app.mpris_client.clone();
+    let mut events = match mpris_client.as_ref() {
+        Some(mpris_client) => Some(mpris_client.events().await?),
+        None => None,
+    };
+
     let mut tick = interval(Duration::from_secs_f64(1f64 / config.fps));
     let mut keyboard = EventStream::new();
 
     while !app.state.quit {
         tokio::select! {
-            Some(event) = events.next() => app.handle_player_event(event).await?,
+            Some(event) = async {
+                match events.as_mut() {
+                    Some(events) => events.next().await,
+                    None => std::future::pending().await,
+                }
+            } => app.handle_player_event(event).await?,
 
             _ = tick.tick() => app.handle_tick_event().await?,
 

@@ -11,14 +11,17 @@ use database::service::DatabaseService;
 use gui::renderer::GuiRenderer;
 use lyrc_core::app::App;
 use mpris::client::MprisClient;
-use synchronizer::strategies::{cues::CueSynchronizer, words::WordSynchronizer};
+use synchronizer::strategies::{
+    cues::CueSynchronizer, words::WordSynchronizer,
+};
 
 use crossterm::event::{Event, EventStream};
 use futures_util::stream::StreamExt;
 
 pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut workers = Workers::start().await?;
-    let player = &MprisClient::choose_player(&config.targets_in_priority_order).await?;
+    let player =
+        &MprisClient::choose_player(&config.targets_in_priority_order).await?;
     let database_service = DatabaseService::new(&config).await?;
 
     let cue_synchronizer = CueSynchronizer::new();
@@ -38,8 +41,11 @@ pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     app.update_track().await;
     app.update_subtitle_document().await;
 
-    let mpris = app.mpris_client.clone();
-    let mut events = mpris.events().await?;
+    let mpris_client = app.mpris_client.clone();
+    let mut events = match mpris_client.as_ref() {
+        Some(mpris_client) => Some(mpris_client.events().await?),
+        None => None,
+    };
 
     todo!()
 }

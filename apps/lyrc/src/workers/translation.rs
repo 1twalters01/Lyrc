@@ -36,13 +36,17 @@ impl TranslationWorker {
                         subtitle_document,
                     }) => {
                         let argos_result = ArgosTranslator
-                            .translate(language, subtitle_document, locals.clone())
+                            .translate(
+                                language,
+                                subtitle_document,
+                                locals.clone(),
+                            )
                             .await;
 
                         let result = match argos_result {
-                            Ok(Some(document)) => {
-                                TranslationResult::Complete(Some((document, language)))
-                            }
+                            Ok(Some(document)) => TranslationResult::Complete(
+                                Some((document, language)),
+                            ),
                             Ok(None) => TranslationResult::Complete(None),
                             Err(error) => TranslationResult::Failed(error),
                         };

@@ -1,5 +1,7 @@
-
-use downloader::{messages::{DownloadRequest, DownloadTask}, service::DownloadService};
+use downloader::{
+    messages::{DownloadRequest, DownloadTask},
+    service::DownloadService,
+};
 use mpris::track::Track;
 
 use crate::{app::App, renderer::Renderer};

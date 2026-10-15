@@ -22,6 +22,7 @@ name = "aligner"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "configuration",
  "futures",
  "mpris",
  "pyo3",
@@ -3647,6 +3648,7 @@ name = "translator"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "configuration",
  "futures",
  "pyo3",
  "pyo3-async-runtimes",

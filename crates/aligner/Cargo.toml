@@ -9,6 +9,7 @@ futures = "0.3.33"
 pyo3 = { version = "0.29.0", features = ["auto-initialize"] }
 tokio = { version = "1.53.1", features = ["full"] }
 mpris = { path = "../mpris/" }
-subtitles = { path = "../subtitles/" }
 uuid = { version = "1.24.1", features = ["v4", "fast-rng", "macro-diagnostics"] }
 
+configuration = { path = "../configuration/"}
+subtitles = { path = "../subtitles/" }

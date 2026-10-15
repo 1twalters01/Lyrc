@@ -1,8 +1,6 @@
 use downloader::{
     messages::{DownloadRequest, DownloadResult, DownloadTask},
     models::LyricsFormat,
-    provider::LyricsDownloader,
-    providers::lrclib::LrclibProvider,
 };
 use pyo3_async_runtimes::TaskLocals;
 use subtitles::{formats::lrc::parser::LrcParser, parser::SubtitleParser};
@@ -38,26 +36,41 @@ impl DownloadWorker {
                         download_service,
                     }) => {
                         let lyrics_provider = download_service.get_provider();
-                        let lyrics_result = lyrics_provider.search(track.clone(), locals.clone()).await;
+                        let lyrics_result = lyrics_provider
+                            .search(track.clone(), locals.clone())
+                            .await;
 
                         let result = match lyrics_result {
                             Ok(Some(lyrics)) => {
                                 let document = match lyrics.format {
                                     LyricsFormat::Lrc => {
                                         let mut document_path = None;
-                                        if let Some(file_path) = track.file_path {
-                                            let mut lrc_path = file_path.to_path_buf();
+                                        if let Some(file_path) = track.file_path
+                                        {
+                                            let mut lrc_path =
+                                                file_path.to_path_buf();
                                             lrc_path.set_extension("lrc");
                                             document_path = Some(lrc_path);
                                         }
-                                        let document = LrcParser.parse(&lyrics.content);
+                                        let document =
+                                            LrcParser.parse(&lyrics.content);
                                         if let Ok(mut document) = document {
-                                            document.metadata.file_path = document_path;
-                                            if document.metadata.artists.is_empty() {
-                                                document.metadata.artists.extend(track.artists);
+                                            document.metadata.file_path =
+                                                document_path;
+                                            if document
+                                                .metadata
+                                                .artists
+                                                .is_empty()
+                                            {
+                                                document
+                                                    .metadata
+                                                    .artists
+                                                    .extend(track.artists);
                                             }
-                                            if document.metadata.title.is_none() {
-                                                document.metadata.title = Some(track.title);
+                                            if document.metadata.title.is_none()
+                                            {
+                                                document.metadata.title =
+                                                    Some(track.title);
                                             }
 
                                             Some(document)

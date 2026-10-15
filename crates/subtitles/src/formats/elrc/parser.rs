@@ -51,7 +51,8 @@ impl SubtitleParser for ElrcParser {
             .map(|line| Self::parse_line(line))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let mut subtitle_document = ElrcParser::build_subtitle_document(lrc_lines);
+        let mut subtitle_document =
+            ElrcParser::build_subtitle_document(lrc_lines);
 
         subtitle_document.update_languages();
 
@@ -65,7 +66,9 @@ impl ElrcParser {
             ElrcLineType::Metadata => Self::parse_metadata(line),
             ElrcLineType::Lyric => Self::parse_lyric(line),
             ElrcLineType::Empty => Ok(ElrcLine::Empty),
-            ElrcLineType::Unknown => Ok(ElrcLine::Unknown { value: line.into() }),
+            ElrcLineType::Unknown => {
+                Ok(ElrcLine::Unknown { value: line.into() })
+            }
         }
     }
 
@@ -138,15 +141,21 @@ impl ElrcParser {
                 let milliseconds_str = &remainder[dot_idx + 1..];
                 let milliseconds = match milliseconds_str.len() {
                     2 => match milliseconds_str.parse::<i64>() {
-                        Ok(milliseconds) => Duration::milliseconds(milliseconds * 10),
+                        Ok(milliseconds) => {
+                            Duration::milliseconds(milliseconds * 10)
+                        }
                         Err(_) => return Err(ElrcError::InvalidTimestamp),
                     },
                     3 => match milliseconds_str.parse::<i64>() {
-                        Ok(milliseconds) => Duration::milliseconds(milliseconds),
+                        Ok(milliseconds) => {
+                            Duration::milliseconds(milliseconds)
+                        }
                         Err(_) => return Err(ElrcError::InvalidTimestamp),
                     },
                     _ => {
-                        return Err(ElrcError::InvalidTimestampMillisecondFormat);
+                        return Err(
+                            ElrcError::InvalidTimestampMillisecondFormat,
+                        );
                     }
                 };
 
@@ -182,7 +191,8 @@ impl ElrcParser {
             timestamps.push(ElrcParser::parse_timestamp(tag)?);
         }
 
-        let remaining_line = remaining_line.strip_prefix(" ").unwrap_or(remaining_line);
+        let remaining_line =
+            remaining_line.strip_prefix(" ").unwrap_or(remaining_line);
 
         for word in remaining_line.split(" ") {
             let mut remaining_word = word;
@@ -196,7 +206,8 @@ impl ElrcParser {
                 let word_timestamp = &stripped_word[..end];
                 remaining_word = &stripped_word[end + 1..];
 
-                word_timestamps.push(ElrcParser::parse_timestamp(word_timestamp)?);
+                word_timestamps
+                    .push(ElrcParser::parse_timestamp(word_timestamp)?);
             }
 
             for timestamp in word_timestamps {
@@ -210,26 +221,36 @@ impl ElrcParser {
         Ok(ElrcLine::Lyric { timestamps, words })
     }
 
-    fn add_metadata(subtitle_document: &mut SubtitleDocument, key: &str, value: &str) {
+    fn add_metadata(
+        subtitle_document: &mut SubtitleDocument,
+        key: &str,
+        value: &str,
+    ) {
         match key.to_ascii_lowercase().as_str() {
-            "ti" => subtitle_document.metadata.title = Some(String::from(value)),
-            "al" => subtitle_document.metadata.album = Some(String::from(value)),
+            "ti" => {
+                subtitle_document.metadata.title = Some(String::from(value))
+            }
+            "al" => {
+                subtitle_document.metadata.album = Some(String::from(value))
+            }
             "la" => {
                 subtitle_document.metadata.languages.extend(
-                    value
-                        .split(',')
-                        .filter_map(|language| Language::from_str(language.trim()).ok()),
+                    value.split(',').filter_map(|language| {
+                        Language::from_str(language.trim()).ok()
+                    }),
                 );
             }
-            "ar" => subtitle_document
-                .metadata
-                .artists
-                .extend(value.split(',').map(|artist| artist.trim().to_owned())),
+            "ar" => subtitle_document.metadata.artists.extend(
+                value.split(',').map(|artist| artist.trim().to_owned()),
+            ),
             _ => {}
         }
     }
 
-    fn next_lyric_timestamp(lines: &Vec<ElrcLine>, current_index: usize) -> Option<Duration> {
+    fn next_lyric_timestamp(
+        lines: &Vec<ElrcLine>,
+        current_index: usize,
+    ) -> Option<Duration> {
         lines
             .iter()
             .skip(current_index + 1)
@@ -274,9 +295,11 @@ impl ElrcParser {
                     ElrcParser::add_metadata(&mut subtitle_document, key, value)
                 }
                 ElrcLine::Lyric { timestamps, words } => {
-                    let next_lyric_timestamp = Self::next_lyric_timestamp(&lines, line_index);
+                    let next_lyric_timestamp =
+                        Self::next_lyric_timestamp(&lines, line_index);
 
-                    let aligned_words = Self::build_aligned_words(words, next_lyric_timestamp);
+                    let aligned_words =
+                        Self::build_aligned_words(words, next_lyric_timestamp);
 
                     subtitle_document.cues.extend(SubtitleCues::Word(
                         timestamps

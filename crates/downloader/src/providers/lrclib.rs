@@ -1,7 +1,9 @@
 use futures::future::BoxFuture;
 use mpris::track::Track;
 use pyo3::{prelude::*, types::PyDict};
-use pyo3_async_runtimes::{TaskLocals, into_future_with_locals, tokio::into_future};
+use pyo3_async_runtimes::{
+    TaskLocals, into_future_with_locals, tokio::into_future,
+};
 
 use crate::{
     error::DownloadError,
@@ -9,10 +11,14 @@ use crate::{
     provider::LyricsDownloader,
 };
 
-pub struct LrclibProvider;
+pub struct LrclibDownloader;
 
-impl LyricsDownloader for LrclibProvider {
-    fn search(&self, track: Track, locals: TaskLocals) -> BoxFuture<'static, Result<Option<Lyrics>, DownloadError>> {
+impl LyricsDownloader for LrclibDownloader {
+    fn search(
+        &self,
+        track: Track,
+        locals: TaskLocals,
+    ) -> BoxFuture<'static, Result<Option<Lyrics>, DownloadError>> {
         Box::pin(async move {
             let py_future = Python::attach(|py| -> PyResult<_> {
                 // import required python packages
@@ -20,10 +26,18 @@ impl LyricsDownloader for LrclibProvider {
                 let datetime = PyModule::import(py, "datetime")?;
 
                 // import modules
-                let service_module = PyModule::import(py, "downloader.service")?;
-                let track_module = PyModule::import(py, "downloader.models.track")?;
-                let provider_module = PyModule::import(py, "downloader.providers.lrclib.provider")?;
-                let options_module = PyModule::import(py, "downloader.providers.lrclib.options")?;
+                let service_module =
+                    PyModule::import(py, "downloader.service")?;
+                let track_module =
+                    PyModule::import(py, "downloader.models.track")?;
+                let provider_module = PyModule::import(
+                    py,
+                    "downloader.providers.lrclib.provider",
+                )?;
+                let options_module = PyModule::import(
+                    py,
+                    "downloader.providers.lrclib.options",
+                )?;
 
                 // get provider dict with lrclib instance inside
                 let client = httpx.getattr("AsyncClient")?.call0()?;
@@ -34,7 +48,8 @@ impl LyricsDownloader for LrclibProvider {
                 providers.set_item("lrclib", lrclib_downloader)?;
 
                 // Create options
-                let options = options_module.getattr("LrcLibOptions")?.call0()?;
+                let options =
+                    options_module.getattr("LrcLibOptions")?.call0()?;
 
                 // Create instance of lyrics service
                 let lyrics_service = service_module
@@ -55,8 +70,8 @@ impl LyricsDownloader for LrclibProvider {
                     timedelta,
                 ))?;
 
-                let coroutine =
-                    lyrics_service.call_method1("search", (py_track, "lrclib", options))?;
+                let coroutine = lyrics_service
+                    .call_method1("search", (py_track, "lrclib", options))?;
                 into_future_with_locals(&locals, coroutine)
             })
             .map_err(|e| DownloadError::PythonError { error: e })?;
@@ -72,15 +87,20 @@ impl LyricsDownloader for LrclibProvider {
 
                 let lyrics = result.bind(py);
                 let content: String = lyrics.getattr("content")?.extract()?;
-                let py_format: String = lyrics.getattr("format")?.getattr("value")?.extract()?;
-                let py_source: String = lyrics.getattr("source")?.getattr("value")?.extract()?;
+                let py_format: String =
+                    lyrics.getattr("format")?.getattr("value")?.extract()?;
+                let py_source: String =
+                    lyrics.getattr("source")?.getattr("value")?.extract()?;
 
                 let format = match py_format.as_str() {
                     "lrc" => LyricsFormat::Lrc,
                     "text" => LyricsFormat::Text,
                     _ => {
-                        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                            "unknown lyrics format",
+                        return Err(PyErr::new::<
+                            pyo3::exceptions::PyValueError,
+                            _,
+                        >(
+                            "unknown lyrics format"
                         ));
                     }
                 };
@@ -88,8 +108,11 @@ impl LyricsDownloader for LrclibProvider {
                     "self" => LyricsSource::Python,
                     "lrclib" => LyricsSource::Lrclib,
                     _ => {
-                        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                            "unknown lyrics source",
+                        return Err(PyErr::new::<
+                            pyo3::exceptions::PyValueError,
+                            _,
+                        >(
+                            "unknown lyrics source"
                         ));
                     }
                 };
