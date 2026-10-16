@@ -16,26 +16,26 @@ pub async fn handle_tui_events(
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mpris_client = app.mpris_client.clone();
-    let mut events = match mpris_client.as_ref() {
+    let mut mpris_event = match mpris_client.as_ref() {
         Some(mpris_client) => Some(mpris_client.events().await?),
         None => None,
     };
 
-    let mut tick = interval(Duration::from_secs_f64(1f64 / config.fps));
-    let mut keyboard = EventStream::new();
+    let mut tick_event = interval(Duration::from_secs_f64(1f64 / config.fps));
+    let mut keyboard_event = EventStream::new();
 
     while !app.state.quit {
         tokio::select! {
             Some(event) = async {
-                match events.as_mut() {
+                match mpris_event.as_mut() {
                     Some(events) => events.next().await,
                     None => std::future::pending().await,
                 }
             } => app.handle_player_event(event).await?,
 
-            _ = tick.tick() => app.handle_tick_event().await?,
+            _ = tick_event.tick() => app.handle_tick_event().await?,
 
-            Some(Ok(Event::Key(key))) = keyboard.next() => keyboard::handle_keyboard_event(&mut app, key, &config).await?,
+            Some(Ok(Event::Key(key))) = keyboard_event.next() => keyboard::handle_keyboard_event(&mut app, key, &config).await?,
 
             Some(result) = workers_rx.download_rx.recv() => app.handle_download_event(result)?,
 

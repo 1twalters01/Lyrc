@@ -16,10 +16,9 @@
 
 ## Release Criteria
 - [x] Reliably detects the current track
-- [ ] Can download lyrics of current track
+- [x] Can download lyrics of current track
     - [x] Can choose the download provider
     - [x] From LrcLib
-    - [ ] From Musixmatch
 - [x] Can force-align lyrics
     - [x] Cue level to Word level alignment
     - [x] No alignment to Cue level alignment ---> This is currently scuffed
@@ -84,6 +83,8 @@
     [ ] Ollama
         [ ] Fill in options python variable in rust provider file
         [ ] Test
+* Download songs
+    [ ] From Musixmatch
 * Handle event for change in playback speed
 - [ ] Handle changing playback speed
 - [ ] Split/merge lines

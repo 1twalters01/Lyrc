@@ -1,51 +1,97 @@
-use std::time::Duration as std_duration;
+use std::{cell::RefCell, rc::Rc};
 
-use crate::{
-    args::{Args, Command, Frontend},
-    keyboard,
-    workers::start::Workers,
-};
+use crate::workers::start::Workers;
+
+use gtk::{gio::prelude::*, glib::MainContext};
 
 use configuration::config::Config;
 use database::service::DatabaseService;
-use gui::renderer::GuiRenderer;
+use gui::{
+    application::{build_application, run_application, setup_application},
+    renderer::GuiRenderer,
+};
 use lyrc_core::app::App;
 use mpris::client::MprisClient;
-use synchronizer::strategies::{
-    cues::CueSynchronizer, words::WordSynchronizer,
-};
 
-use crossterm::event::{Event, EventStream};
-use futures_util::stream::StreamExt;
+struct GuiInit {
+    config: Config,
+    database_service: DatabaseService,
+    mpris_client: Option<MprisClient>,
+    workers: Workers,
+}
 
 pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-    let mut workers = Workers::start().await?;
-    let player =
-        &MprisClient::choose_player(&config.targets_in_priority_order).await?;
+    let mpris_client =
+        match MprisClient::choose_player(&config.targets_in_priority_order)
+            .await?
+        {
+            Some(player) => Some(MprisClient::connect(&player).await?),
+            None => None,
+        };
     let database_service = DatabaseService::new(&config).await?;
+    let workers = Workers::start().await?;
 
-    let cue_synchronizer = CueSynchronizer::new();
-    let word_synchronizer = WordSynchronizer::new();
-
-    let mut app = App::new(
-        GuiRenderer::new()?,
+    run_app(
         database_service,
-        player,
-        workers.tx.download_tx,
-        workers.tx.translation_tx,
-        workers.tx.alignment_tx,
-        &config,
-    )
-    .await;
+        mpris_client,
+        workers,
+        config,
+    ).await
+}
 
-    app.update_track().await;
-    app.update_subtitle_document().await;
+pub async fn run_app(
+    database_service: DatabaseService,
+    mpris_client: Option<MprisClient>,
+    workers: Workers,
+    config: Config,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let application = build_application(&config.application_id);
 
-    let mpris_client = app.mpris_client.clone();
-    let mut events = match mpris_client.as_ref() {
-        Some(mpris_client) => Some(mpris_client.events().await?),
-        None => None,
-    };
+    let init = Rc::new(RefCell::new(Some(GuiInit {
+        config,
+        database_service,
+        mpris_client,
+        workers,
+    })));
 
-    todo!()
+    application.connect_activate(move |application| {
+        let Some(init) = init.borrow_mut().take() else {
+            return;
+        };
+
+        let renderer = match GuiRenderer::new(application) {
+            Ok(renderer) => renderer,
+            Err(error) => {
+                eprintln!("Gui renderer error: {error}");
+                return;
+            }
+        };
+
+        renderer.present();
+
+        MainContext::default().spawn_local(async move {
+            let GuiInit {
+                config,
+                database_service,
+                mpris_client,
+                workers,
+            } = init;
+
+            let mut app = App::new(
+                renderer,
+                database_service,
+                mpris_client,
+                workers.tx.download_tx,
+                workers.tx.translation_tx,
+                workers.tx.alignment_tx,
+                &config,
+            );
+
+            app.update().await;
+        });
+    });
+
+    run_application(&application);
+
+    Ok(())
 }

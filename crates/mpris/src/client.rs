@@ -121,7 +121,8 @@ impl MprisClient {
         let mut players_with_status = Vec::new();
 
         for player in &players {
-            let Ok(client) = Self::with_connection(connection.clone(), player) else {
+            let Ok(client) = Self::with_connection(connection.clone(), player)
+            else {
                 continue;
             };
 

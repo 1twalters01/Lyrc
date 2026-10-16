@@ -10,10 +10,7 @@ use lyrc_core::{
     state::SubtitleVariant,
 };
 use mpris::client::MprisClient;
-use subtitles::{
-    language::Language,
-    subtitles::SyncLevel,
-};
+use subtitles::{language::Language, subtitles::SyncLevel};
 
 pub async fn handle_key<R: Renderer>(
     app: &mut App<R>,

@@ -30,10 +30,11 @@ impl<R> App<R>
 where
     R: Renderer,
 {
-    pub async fn new(
+    pub fn new(
         renderer: R,
         database_service: DatabaseService,
-        player: &Option<String>,
+        mpris_client: Option<MprisClient>,
+        // player: &Option<String>,
         download_req_tx: Sender<DownloadRequest>,
         translation_req_tx: Sender<TranslationRequest>,
         alignment_req_tx: Sender<AlignmentRequest>,
@@ -42,13 +43,8 @@ where
         let synchronizer = AppSynchronizer::new();
         let clock = PlaybackClock::new(config.clock_offset);
         let state = AppState::new();
-        let mpris_client = if let Some(player) = player {
-            Some(MprisClient::connect(player).await.unwrap())
-        } else {
-            None
-        };
 
-        let mut app = Self {
+        Self {
             renderer,
             database_service,
             clock,
@@ -58,11 +54,11 @@ where
             download_req_tx,
             translation_req_tx,
             alignment_req_tx,
-        };
+        }
+    }
 
-        app.update_track().await;
-        let _ = app.update_subtitle_document().await;
-
-        app
+    pub async fn update(&mut self) {
+        self.update_track().await;
+        let _ = self.update_subtitle_document().await;
     }
 }

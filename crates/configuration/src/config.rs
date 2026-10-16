@@ -1,8 +1,11 @@
 use chrono::Duration;
+use serde::Deserialize;
 
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub targets_in_priority_order: Vec<String>,
     pub fps: f64,
+    pub application_id: String,
     pub clock_offset: Duration,
     pub rewind_duration: Duration,
     pub fast_forward_duration: Duration,
@@ -19,6 +22,7 @@ impl Default for Config {
         let targets_in_priority_order =
             Vec::from([String::from("mpv"), String::from("cmus")]);
         let fps = 60f64;
+        let application_id = String::from("com.lyrc.App");
         let clock_offset = Duration::milliseconds(0);
         let rewind_duration = Duration::milliseconds(-5000);
         let fast_forward_duration = Duration::milliseconds(5000);
@@ -33,6 +37,7 @@ impl Default for Config {
         Self {
             targets_in_priority_order,
             fps,
+            application_id,
             clock_offset,
             rewind_duration,
             fast_forward_duration,
