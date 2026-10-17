@@ -1,7 +1,7 @@
 use chrono::Duration;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub targets_in_priority_order: Vec<String>,
     pub fps: f64,

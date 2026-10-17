@@ -237,7 +237,7 @@ impl AppState {
                     self.app_mode = AppMode::Normal
                 }
 
-                self.update_track(Some(track.to_owned())).await;
+                self.update_track(Some(track.to_owned()));
                 self.reload_subtitle_documents().await;
             }
             PlayerEvent::PlaybackChanged(playback) => {
@@ -256,7 +256,7 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn update_track(&mut self, current_track: Option<Track>) {
+    pub fn update_track(&mut self, current_track: Option<Track>) {
         self.track = current_track;
     }
 

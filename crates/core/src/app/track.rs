@@ -24,7 +24,7 @@ where
             None => None,
         };
 
-        self.state.update_track(track).await;
+        self.state.update_track(track);
     }
 
     pub async fn update_subtitle_document(

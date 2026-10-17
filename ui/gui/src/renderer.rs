@@ -9,19 +9,19 @@ use lyrc_core::renderer::Renderer;
 
 pub struct GuiRenderer {
     window: ApplicationWindow,
-    subtitle_label: Label,
-    translation_label: Label,
+    position_label: Label,
+    artist_label: Label,
     lines_per_page: usize,
 }
 
 impl GuiRenderer {
     pub fn new(application: &Application) -> io::Result<Self> {
-        let subtitle_label = Label::new(Some("hi"));
-        let translation_label = Label::new(Some("test"));
+        let position_label = Label::new(Some("00:00"));
+        let artist_label = Label::new(None);
 
         let content = GtkBox::new(Orientation::Vertical, 12);
-        content.append(&subtitle_label);
-        content.append(&translation_label);
+        content.append(&position_label);
+        content.append(&artist_label);
 
         let window = ApplicationWindow::builder()
             .application(application)
@@ -31,8 +31,8 @@ impl GuiRenderer {
 
         Ok(Self {
             window,
-            subtitle_label,
-            translation_label,
+            position_label,
+            artist_label,
             lines_per_page: 0,
         })
     }
@@ -51,7 +51,23 @@ impl Renderer for GuiRenderer {
         position: Option<Duration>,
         active_indices: &Vec<lyrc_core::synchronizer::ActiveIndex>,
     ) -> Result<(), Self::Error> {
-        todo!()
+        let time_text = position
+            .map(|duration| {
+                let total_seconds = duration.num_seconds();
+                let minutes = total_seconds / 60;
+                let seconds = total_seconds % 60;
+
+                format!("{minutes:02}:{seconds:02}")
+            })
+            .unwrap_or_else(|| "--:--".to_string());
+
+        self.position_label.set_text(&time_text);
+
+        if let Some(ref track) = state.track {
+            self.artist_label.set_text(&track.artists.join(", "));
+        }
+
+        Ok(())
     }
 
     fn get_lines_per_page(&self) -> usize {

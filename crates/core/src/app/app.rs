@@ -34,7 +34,6 @@ where
         renderer: R,
         database_service: DatabaseService,
         mpris_client: Option<MprisClient>,
-        // player: &Option<String>,
         download_req_tx: Sender<DownloadRequest>,
         translation_req_tx: Sender<TranslationRequest>,
         alignment_req_tx: Sender<AlignmentRequest>,

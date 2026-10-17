@@ -2,7 +2,7 @@ use configuration::config::Config;
 
 use crate::{
     args::{Args, Command, Frontend},
-    interfaces::{daemon::run_daemon, gui::run_gui, tui::run::run_tui},
+    interfaces::{daemon::run_daemon, gui::run::run_gui, tui::run::run_tui},
 };
 
 pub async fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
