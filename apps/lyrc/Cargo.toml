@@ -24,3 +24,4 @@ aligner = { path = "../../crates/aligner/" }
 translator = { path = "../../crates/translator/" }
 database = { path = "../../crates/database/" }
 tui = { path = "../../ui/tui/" }
+async-channel = "2.5.0"

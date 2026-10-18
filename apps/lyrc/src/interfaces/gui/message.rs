@@ -1,10 +1,13 @@
 use chrono::Duration;
-use mpris::track::Track;
+use mpris::{playback::PlaybackStatus, track::Track};
 
 #[derive(Debug)]
 pub enum AppMessage {
-    TrackUpdated {
-        track: Option<Track>,
-        position: Option<Duration>,
-    },
+    TickEvent {
+        new_position: Option<Duration>,
+        playback_status: PlaybackStatus,
+    }, /* TrackUpdated {
+        *     track: Option<Track>,
+        *     position: Option<Duration>,
+        * }, */
 }

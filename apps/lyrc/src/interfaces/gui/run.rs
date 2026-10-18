@@ -1,5 +1,5 @@
-use std::{cell::RefCell, sync::Arc};
 use std::time::Duration;
+use std::{cell::RefCell, sync::Arc};
 
 use configuration::config::Config;
 use database::service::DatabaseService;
@@ -10,6 +10,7 @@ use gui::{
 };
 use lyrc_core::{app::App, renderer::Renderer};
 use mpris::client::MprisClient;
+use tokio::time::interval;
 
 use crate::{interfaces::gui::message::AppMessage, workers::start::Workers};
 
@@ -36,44 +37,37 @@ pub async fn run_app(
     let mpris_client = Arc::new(mpris_client);
     let mpris_client_bg = Arc::clone(&mpris_client);
 
-    let database_service_rc_refcell =
-        RefCell::new(Some(database_service));
+    let database_service_rc_refcell = RefCell::new(Some(database_service));
 
     let download_tx = RefCell::new(Some(workers.tx.download_tx));
-    let translation_tx =
-        RefCell::new(Some(workers.tx.translation_tx));
+    let translation_tx = RefCell::new(Some(workers.tx.translation_tx));
     let alignment_tx = RefCell::new(Some(workers.tx.alignment_tx));
 
-    let (tx, rx) = tokio::sync::mpsc::channel::<AppMessage>(32);
+    let (tx, rx) = async_channel::unbounded::<AppMessage>();
     let rx = RefCell::new(Some(rx));
     let tx_mpris = tx.clone();
 
     tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(1));
+        let mut tick_event =
+            interval(Duration::from_secs_f64(1f64 / config.fps));
 
         loop {
-            interval.tick().await;
+            tokio::select! {
+                _ = tick_event.tick() => {
+                    if let Some(ref client) = *mpris_client_bg {
+                        let current_position = client.get_current_position().await;
+                        let playback_status = client.get_playback_status().await;
 
-            if let Some(ref client) = *mpris_client_bg {
-                let current_track = client.get_current_track().await;
-                let current_position = client.get_current_position().await;
-
-                if let (Ok(track), Ok(position)) =
-                    (current_track, current_position)
-                {
-                    let _ = tx_mpris
-                        .send(AppMessage::TrackUpdated {
-                            track: Some(track),
-                            position: Some(position),
-                        })
-                        .await;
-                } else {
-                    let _ = tx_mpris
-                        .send(AppMessage::TrackUpdated {
-                            track: None,
-                            position: None,
-                        })
-                        .await;
+                        if let (Ok(current_position), Ok(playback_status)) =
+                            (current_position, playback_status)
+                        {
+                            let _ = tx_mpris.send(AppMessage::TickEvent {
+                                new_position: Some(current_position),
+                                playback_status: playback_status,
+                            })
+                                .await;
+                        }
+                    }
                 }
             }
         }
@@ -81,11 +75,6 @@ pub async fn run_app(
 
     let application = build_application(&config.application_id);
     let config_clone = config.clone();
-
-
-
-
-
 
     application.connect_activate(move |application| {
         let renderer = match GuiRenderer::new(application) {
@@ -129,14 +118,39 @@ pub async fn run_app(
         app.renderer.present();
 
         MainContext::default().spawn_local(async move {
-            let mut rx = rx;
-            while let Some(message) = rx.recv().await {
+            let rx = rx;
+            while let Ok(message) = rx.recv().await {
+                println!("pre match");
                 match message {
-                    AppMessage::TrackUpdated { track, position } => {
-                        app.state.track = track;
+                    AppMessage::TickEvent {
+                        new_position,
+                        playback_status,
+                    } => {
+                        println!("1. Syncing clock...");
+                        if let Err(e) =
+                            app.clock.sync(new_position, playback_status)
+                        {
+                            eprintln!("Clock sync error: {e}");
+                        }
 
+                        println!("2. Received tick: {:?}", new_position);
+                        app.state.playback_state = playback_status;
+
+                        println!("3. Getting position...");
+                        let position = app.clock.get_position();
+
+                        println!("4. Subtitle document");
+                        let subtitle_document = &app.state.subtitle_documents.active();
+                        app.synchronizer.update(subtitle_document, &position);
+
+                        println!("3. Getting position...");
+                        let position = app.clock.get_position();
+
+                        println!("5. Getting active indices...");
                         let active_indices =
                             app.synchronizer.get_active_indices();
+
+                        println!("6. Rendering...");
                         if let Err(e) = app.renderer.render(
                             &mut app.state,
                             position,
@@ -144,6 +158,8 @@ pub async fn run_app(
                         ) {
                             eprintln!("Render error: {e}");
                         }
+
+                        println!("--- Tick handled successfully ---");
                     }
                 }
             }

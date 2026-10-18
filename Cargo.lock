@@ -1883,6 +1883,7 @@ name = "lyrc"
 version = "0.1.0"
 dependencies = [
  "aligner",
+ "async-channel",
  "chrono",
  "clap",
  "configuration",

@@ -180,12 +180,13 @@ where
         self.process_tick(current_position, playback_status)
     }
 
-    fn process_tick(
+    pub fn process_tick(
         &mut self,
         current_position: Option<Duration>,
         playback_status: PlaybackStatus,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.clock.sync(current_position, playback_status)?;
+        self.state.playback_state = playback_status;
 
         let subtitle_document = &self.state.subtitle_documents.active();
         let position = self.clock.get_position();
@@ -195,7 +196,7 @@ where
         Ok(())
     }
 
-    fn render(&mut self) -> Result<(), R::Error> {
+    pub fn render(&mut self) -> Result<(), R::Error> {
         let position = self.clock.get_position();
         let active_cues = self.synchronizer.get_active_indices();
         self.renderer
