@@ -1,18 +1,22 @@
-use std::time::Duration;
-use std::{cell::RefCell, sync::Arc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use configuration::config::Config;
 use database::service::DatabaseService;
-use gtk::{gio::prelude::ApplicationExt, glib::MainContext};
+use gtk::gio::prelude::ApplicationExt;
 use gui::{
     application::{build_application, run_application},
     renderer::GuiRenderer,
 };
-use lyrc_core::{app::App, renderer::Renderer};
+use lyrc_core::app::App;
 use mpris::client::MprisClient;
-use tokio::time::interval;
 
-use crate::{interfaces::gui::message::AppMessage, workers::start::Workers};
+use crate::{
+    interfaces::gui::{
+        event_sink::event_sink, event_source::event_source, helpers::take_once,
+        message::AppMessage,
+    },
+    workers::start::Workers,
+};
 
 pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mpris_client =
@@ -37,7 +41,7 @@ pub async fn run_app(
     let mpris_client = Arc::new(mpris_client);
     let mpris_client_bg = Arc::clone(&mpris_client);
 
-    let database_service_rc_refcell = RefCell::new(Some(database_service));
+    let database_service = RefCell::new(Some(database_service));
 
     let download_tx = RefCell::new(Some(workers.tx.download_tx));
     let translation_tx = RefCell::new(Some(workers.tx.translation_tx));
@@ -47,126 +51,50 @@ pub async fn run_app(
     let rx = RefCell::new(Some(rx));
     let tx_mpris = tx.clone();
 
-    tokio::spawn(async move {
-        let mut tick_event =
-            interval(Duration::from_secs_f64(1f64 / config.fps));
+    event_source(config.clone(), mpris_client_bg, tx_mpris);
 
-        loop {
-            tokio::select! {
-                _ = tick_event.tick() => {
-                    if let Some(ref client) = *mpris_client_bg {
-                        let current_position = client.get_current_position().await;
-                        let playback_status = client.get_playback_status().await;
+    let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
 
-                        if let (Ok(current_position), Ok(playback_status)) =
-                            (current_position, playback_status)
-                        {
-                            let _ = tx_mpris.send(AppMessage::TickEvent {
-                                new_position: Some(current_position),
-                                playback_status: playback_status,
-                            })
-                                .await;
-                        }
-                    }
+    std::thread::spawn(move || {
+        let app_id = config.application_id.clone();
+        let application = build_application(&app_id);
+
+        application.connect_activate(move |application| {
+            let renderer = match GuiRenderer::new(application) {
+                Ok(renderer) => renderer,
+                Err(error) => {
+                    eprintln!("Gui renderer error: {error}");
+                    return;
                 }
-            }
-        }
-    });
+            };
 
-    let application = build_application(&config.application_id);
-    let config_clone = config.clone();
+            let database_service = take_once(&database_service);
+            let download_tx = take_once(&download_tx);
+            let translation_tx = take_once(&translation_tx);
+            let alignment_tx = take_once(&alignment_tx);
+            let rx = take_once(&rx);
 
-    application.connect_activate(move |application| {
-        let renderer = match GuiRenderer::new(application) {
-            Ok(renderer) => renderer,
-            Err(error) => {
-                eprintln!("Gui renderer error: {error}");
-                return;
-            }
-        };
+            let app = Rc::new(RefCell::new(App::new(
+                renderer,
+                database_service,
+                (*mpris_client).clone(),
+                download_tx,
+                translation_tx,
+                alignment_tx,
+                &config,
+            )));
 
-        let database_service = database_service_rc_refcell
-            .borrow_mut()
-            .take()
-            .expect("database_service initialized twice");
-        let download_tx = download_tx
-            .borrow_mut()
-            .take()
-            .expect("download_tx initialized twice");
-        let translation_tx = translation_tx
-            .borrow_mut()
-            .take()
-            .expect("translation_tx initialized twice");
-        let alignment_tx = alignment_tx
-            .borrow_mut()
-            .take()
-            .expect("alignment_tx initialized twice");
-        let rx = rx.borrow_mut().take().expect("rx taken twice");
+            app.borrow().renderer.present();
 
-        let mpris_for_app = (*mpris_client).clone();
-
-        let mut app = App::new(
-            renderer,
-            database_service,
-            mpris_for_app,
-            download_tx,
-            translation_tx,
-            alignment_tx,
-            &config_clone,
-        );
-
-        app.renderer.present();
-
-        MainContext::default().spawn_local(async move {
-            let rx = rx;
-            while let Ok(message) = rx.recv().await {
-                println!("pre match");
-                match message {
-                    AppMessage::TickEvent {
-                        new_position,
-                        playback_status,
-                    } => {
-                        println!("1. Syncing clock...");
-                        if let Err(e) =
-                            app.clock.sync(new_position, playback_status)
-                        {
-                            eprintln!("Clock sync error: {e}");
-                        }
-
-                        println!("2. Received tick: {:?}", new_position);
-                        app.state.playback_state = playback_status;
-
-                        println!("3. Getting position...");
-                        let position = app.clock.get_position();
-
-                        println!("4. Subtitle document");
-                        let subtitle_document = &app.state.subtitle_documents.active();
-                        app.synchronizer.update(subtitle_document, &position);
-
-                        println!("3. Getting position...");
-                        let position = app.clock.get_position();
-
-                        println!("5. Getting active indices...");
-                        let active_indices =
-                            app.synchronizer.get_active_indices();
-
-                        println!("6. Rendering...");
-                        if let Err(e) = app.renderer.render(
-                            &mut app.state,
-                            position,
-                            &active_indices,
-                        ) {
-                            eprintln!("Render error: {e}");
-                        }
-
-                        println!("--- Tick handled successfully ---");
-                    }
-                }
-            }
+            event_sink(app, rx)
         });
+
+        run_application(&application);
+
+        let _ = shutdown_tx.send(());
     });
 
-    run_application(&application);
+    let _ = shutdown_rx.await;
 
     Ok(())
 }

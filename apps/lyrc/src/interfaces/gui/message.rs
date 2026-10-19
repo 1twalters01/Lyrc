@@ -6,8 +6,5 @@ pub enum AppMessage {
     TickEvent {
         new_position: Option<Duration>,
         playback_status: PlaybackStatus,
-    }, /* TrackUpdated {
-        *     track: Option<Track>,
-        *     position: Option<Duration>,
-        * }, */
+    },
 }
