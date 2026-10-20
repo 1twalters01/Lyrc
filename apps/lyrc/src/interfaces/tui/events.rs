@@ -31,7 +31,7 @@ pub async fn handle_tui_events(
                     Some(events) => events.next().await,
                     None => std::future::pending().await,
                 }
-            } => app.handle_player_event(event).await?,
+            } => app.handle_player_event(event)?,
 
             _ = tick_event.tick() => app.handle_tick_event().await?,
 

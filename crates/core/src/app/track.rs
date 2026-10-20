@@ -30,7 +30,7 @@ where
     pub async fn update_subtitle_document(
         &mut self,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.state.reload_subtitle_documents().await;
+        self.state.reload_subtitle_documents();
 
         let mut tx = self.database_service.get_pool().begin().await?;
         let track = match self.state.track {

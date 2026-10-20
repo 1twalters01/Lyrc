@@ -69,7 +69,7 @@ pub async fn handle_key<R: Renderer>(
             }
 
             document_state.unsaved_changes = false;
-            app.state.reload_subtitle_documents().await;
+            app.state.reload_subtitle_documents();
             if let Some(active_variant) =
                 app.state.subtitle_documents.active_variant()
             {
@@ -88,7 +88,7 @@ pub async fn handle_key<R: Renderer>(
         // Mode change
         KeyCode::Esc => {
             if document_state.unsaved_changes == true {
-                app.state.reload_subtitle_documents().await;
+                app.state.reload_subtitle_documents();
                 if let Some(active_variant) =
                     app.state.subtitle_documents.active_variant()
                 {

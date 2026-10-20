@@ -2,6 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use async_channel::Sender;
 use configuration::config::Config;
+use futures_util::stream::StreamExt;
 use mpris::client::MprisClient;
 use tokio::time::interval;
 
@@ -13,11 +14,36 @@ pub fn event_source(
     tx_mpris: Sender<AppMessage>,
 ) {
     tokio::spawn(async move {
+        let mut mpris_event = match mpris_client.as_ref() {
+            Some(mpris_client) => match mpris_client.events().await {
+                Ok(mpris_event) => Some(mpris_event),
+                Err(err) => {
+                    eprintln!("Mpris events stream failed: {:?}", err);
+                    None
+                }
+            },
+            None => None,
+        };
+
         let mut tick_event =
             interval(Duration::from_secs_f64(1f64 / config.fps));
 
+        if let Some(ref client) = *mpris_client {
+            let track = client.get_current_track().await.ok();
+            let _ = tx_mpris.send(AppMessage::FirstEvent { track: track }).await;
+        }
+
         loop {
             tokio::select! {
+                Some(event) = async {
+                    match mpris_event.as_mut() {
+                        Some(events) => events.next().await,
+                        None => std::future::pending().await,
+                    }
+                } => {
+                    let _ = tx_mpris.send(AppMessage::PlayerEvent { event }).await;
+                },
+
                 _ = tick_event.tick() => {
                     if let Some(ref client) = *mpris_client {
                         let fetch_result = tokio::time::timeout(
@@ -36,15 +62,15 @@ pub fn event_source(
                                     playback_status: status,
                                 }).await;
                             }
-                            Ok((e1, e2)) => {
-                                eprintln!("BG: MPRIS fetch error - pos: {:?}, status: {:?}", e1, e2);
+                            Ok((pos_err, status_err)) => {
+                                eprintln!("Mpris fetch error - pos: {:?}, status: {:?}", pos_err, status_err);
                             }
                             Err(_) => {
-                                eprintln!("BG: TIMED OUT fetching MPRIS position!");
+                                eprintln!("Mpris position fetch timed out");
                             }
                         }
                     } else {
-                        eprintln!("BG: WARNING: mpris_client_bg is None!");
+                        eprintln!("No mpris client");
                     }
                 }
             }

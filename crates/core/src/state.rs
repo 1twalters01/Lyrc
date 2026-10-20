@@ -226,9 +226,9 @@ impl AppState {
         }
     }
 
-    pub async fn update(
+    pub fn update(
         &mut self,
-        mpris: &mut MprisClient,
+        // mpris: &mut MprisClient,
         event: &PlayerEvent,
     ) -> Result<(), Box<dyn std::error::Error>> {
         match event {
@@ -238,7 +238,7 @@ impl AppState {
                 }
 
                 self.update_track(Some(track.to_owned()));
-                self.reload_subtitle_documents().await;
+                self.reload_subtitle_documents();
             }
             PlayerEvent::PlaybackChanged(playback) => {
                 self.playback_state = playback.clone();
@@ -260,7 +260,7 @@ impl AppState {
         self.track = current_track;
     }
 
-    pub async fn reload_subtitle_documents(&mut self) {
+    pub fn reload_subtitle_documents(&mut self) {
         self.subtitle_documents.clear();
 
         let Some(track) = &self.track else { return };

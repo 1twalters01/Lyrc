@@ -16,14 +16,11 @@ impl<R> App<R>
 where
     R: Renderer,
 {
-    pub async fn handle_player_event(
+    pub fn handle_player_event(
         &mut self,
         event: PlayerEvent,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(ref mut mpris_client) = self.mpris_client {
-            self.state.update(mpris_client, &event).await?
-        };
-
+        self.state.update(&event)?;
         self.clock.update(event);
         self.synchronizer.update(
             &self.state.subtitle_documents.active(),

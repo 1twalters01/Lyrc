@@ -16,14 +16,24 @@ pub fn event_sink(
             let mut app = app.borrow_mut();
 
             let result = match message {
+                AppMessage::FirstEvent { track } => {
+                    app.state.track = track;
+                    let _ = app.update_subtitle_document();
+                    app.state.reload_subtitle_documents();
+                    Ok(())
+                },
                 AppMessage::TickEvent {
                     new_position,
                     playback_status,
                 } => app.process_tick(new_position, playback_status),
+                AppMessage::PlayerEvent { event } => {
+                    let _ = app.state.update(&event);
+                    app.handle_player_event(event)
+                }
             };
 
             if let Err(e) = result {
-                eprintln!("GUI: Event handling error: {e}");
+                eprintln!("Event handling error: {e}");
             }
         }
     });
