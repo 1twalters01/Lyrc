@@ -6,11 +6,12 @@ use futures_util::stream::StreamExt;
 use mpris::client::MprisClient;
 use tokio::time::interval;
 
-use crate::interfaces::gui::message::AppMessage;
+use crate::{interfaces::gui::message::AppMessage, workers::start::WorkersRx};
 
 pub fn event_source(
     config: Config,
     mpris_client: Arc<Option<MprisClient>>,
+    mut workers_rx: WorkersRx,
     tx_mpris: Sender<AppMessage>,
 ) {
     tokio::spawn(async move {
@@ -30,7 +31,8 @@ pub fn event_source(
 
         if let Some(ref client) = *mpris_client {
             let track = client.get_current_track().await.ok();
-            let _ = tx_mpris.send(AppMessage::FirstEvent { track: track }).await;
+            let _ =
+                tx_mpris.send(AppMessage::FirstEvent { track: track }).await;
         }
 
         loop {
@@ -73,6 +75,18 @@ pub fn event_source(
                         eprintln!("No mpris client");
                     }
                 }
+
+                Some(result) = workers_rx.download_rx.recv() => {
+                    let _ = tx_mpris.send(AppMessage::DownloadEvent { result }).await;
+                },
+
+                Some(result) = workers_rx.alignment_rx.recv() => {
+                    let _ = tx_mpris.send(AppMessage::AlignmentEvent { result }).await;
+                },
+
+                Some(result) = workers_rx.translation_rx.recv() => {
+                    let _ = tx_mpris.send(AppMessage::TranslationEvent { result }).await;
+                },
             }
         }
     });

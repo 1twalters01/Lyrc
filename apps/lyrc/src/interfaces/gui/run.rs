@@ -51,7 +51,7 @@ pub async fn run_app(
     let rx = RefCell::new(Some(rx));
     let tx_mpris = tx.clone();
 
-    event_source(config.clone(), mpris_client_bg, tx_mpris);
+    event_source(config.clone(), mpris_client_bg, workers.rx, tx_mpris);
 
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
 

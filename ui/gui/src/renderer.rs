@@ -78,7 +78,16 @@ impl Renderer for GuiRenderer {
         }
 
         if let Some(ref subtitle_document) = state.subtitle_documents.active() {
-            self.subtitle_label.set_text(&subtitle_document.document.cues.get_lines().unwrap_or(Vec::new()).join("\n"))
+            self.subtitle_label.set_text(
+                &subtitle_document
+                    .document
+                    .cues
+                    .get_lines()
+                    .unwrap_or(Vec::new())
+                    .join("\n"),
+            )
+        } else {
+            self.subtitle_label.set_text("No Lyrics Found")
         }
 
         Ok(())
