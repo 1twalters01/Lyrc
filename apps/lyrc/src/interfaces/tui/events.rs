@@ -21,7 +21,7 @@ pub async fn handle_tui_events(
         None => None,
     };
 
-    let mut tick_event = interval(Duration::from_secs_f64(1f64 / config.fps));
+    let mut tick_event = interval(Duration::from_secs_f64(1f64 / config.playback.fps));
     let mut keyboard_event = EventStream::new();
 
     while !app.state.quit {

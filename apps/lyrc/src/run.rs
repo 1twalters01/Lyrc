@@ -1,4 +1,4 @@
-use configuration::config::Config;
+use configuration::load::load_config;
 
 use crate::{
     args::{Args, Command, Frontend},
@@ -6,7 +6,9 @@ use crate::{
 };
 
 pub async fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
-    let config = Config::default();
+    let toml_path = None;
+    let json_path = None;
+    let config = load_config(toml_path, json_path)?;
 
     let command = args.command.unwrap_or(Command::App {
         frontend: Frontend::Tui,

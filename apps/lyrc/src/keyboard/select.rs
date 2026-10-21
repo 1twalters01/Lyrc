@@ -197,9 +197,9 @@ pub async fn handle_key<R: Renderer>(
 
         // Playback control
         KeyCode::Char(' ') => app.toggle_play_pause().await?,
-        KeyCode::Left => app.seek_by_duration(config.rewind_duration).await?,
+        KeyCode::Left => app.seek_by_duration(config.playback.rewind_duration).await?,
         KeyCode::Right => {
-            app.seek_by_duration(config.fast_forward_duration).await?
+            app.seek_by_duration(config.playback.fast_forward_duration).await?
         }
 
         // Edit cues
@@ -343,7 +343,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(
-                    config.backwards_cue_increment_small,
+                    config.subtitles.backwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -375,7 +375,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(
-                    config.backwards_cue_increment_small,
+                    config.subtitles.backwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -411,7 +411,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(
-                    config.forwards_cue_increment_small,
+                    config.subtitles.forwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -443,7 +443,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(
-                    config.forwards_cue_increment_small,
+                    config.subtitles.forwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -479,7 +479,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(
-                    config.backwards_cue_increment_small,
+                    config.subtitles.backwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -511,7 +511,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(
-                    config.backwards_cue_increment_small,
+                    config.subtitles.backwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -547,7 +547,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(
-                    config.forwards_cue_increment_small,
+                    config.subtitles.forwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -579,7 +579,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(
-                    config.forwards_cue_increment_small,
+                    config.subtitles.forwards_cue_increment_small,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -615,7 +615,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(
-                    config.backwards_cue_increment_large,
+                    config.subtitles.backwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -647,7 +647,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_start_time(
-                    config.backwards_cue_increment_large,
+                    config.subtitles.backwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -683,7 +683,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(
-                    config.forwards_cue_increment_large,
+                    config.subtitles.forwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -715,7 +715,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_start_time(
-                    config.forwards_cue_increment_large,
+                    config.subtitles.forwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -751,7 +751,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(
-                    config.backwards_cue_increment_large,
+                    config.subtitles.backwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -783,7 +783,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.decrease_current_cue_end_time(
-                    config.backwards_cue_increment_large,
+                    config.subtitles.backwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -819,7 +819,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(
-                    config.forwards_cue_increment_large,
+                    config.subtitles.forwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };
@@ -851,7 +851,7 @@ pub async fn handle_key<R: Renderer>(
 
                 document_state.unsaved_changes = true;
                 app.increase_current_cue_end_time(
-                    config.forwards_cue_increment_large,
+                    config.subtitles.forwards_cue_increment_large,
                 )?;
 
                 let edit = Edit::EditCueTimes { changes };

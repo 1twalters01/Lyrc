@@ -20,13 +20,13 @@ use crate::{
 
 pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mpris_client =
-        match MprisClient::choose_player(&config.targets_in_priority_order)
+        match MprisClient::choose_player(&config.player.targets_in_priority_order)
             .await?
         {
             Some(player) => Some(MprisClient::connect(&player).await?),
             None => None,
         };
-    let database_service = DatabaseService::new(&config).await?;
+    let database_service = DatabaseService::new(&config.database).await?;
     let workers = Workers::start().await?;
 
     run_app(database_service, mpris_client, workers, config).await
@@ -51,12 +51,12 @@ pub async fn run_app(
     let rx = RefCell::new(Some(rx));
     let tx_mpris = tx.clone();
 
-    event_source(config.clone(), mpris_client_bg, workers.rx, tx_mpris);
+    event_source(config.playback.clone(), mpris_client_bg, workers.rx, tx_mpris);
 
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
 
     std::thread::spawn(move || {
-        let app_id = config.application_id.clone();
+        let app_id = config.playback.application_id.clone();
         let application = build_application(&app_id);
 
         application.connect_activate(move |application| {
@@ -81,7 +81,7 @@ pub async fn run_app(
                 download_tx,
                 translation_tx,
                 alignment_tx,
-                &config,
+                &config.playback,
             )));
 
             app.borrow().renderer.present();

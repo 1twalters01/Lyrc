@@ -85,9 +85,9 @@ pub async fn handle_key<R: Renderer>(
 
         // playback control
         KeyCode::Char(' ') => app.toggle_play_pause().await?,
-        KeyCode::Left => app.seek_by_duration(config.rewind_duration).await?,
+        KeyCode::Left => app.seek_by_duration(config.playback.rewind_duration).await?,
         KeyCode::Right => {
-            app.seek_by_duration(config.fast_forward_duration).await?
+            app.seek_by_duration(config.playback.fast_forward_duration).await?
         }
 
         // line control
@@ -146,7 +146,7 @@ pub async fn handle_key<R: Renderer>(
                 };
 
             app.decrease_all_cue_start_times(
-                config.backwards_cue_increment_small,
+                config.subtitles.backwards_cue_increment_small,
             );
 
             if let Some(document_state) =
@@ -230,7 +230,7 @@ pub async fn handle_key<R: Renderer>(
                 };
 
             app.increase_all_cue_start_times(
-                config.forwards_cue_increment_small,
+                config.subtitles.forwards_cue_increment_small,
             );
 
             if let Some(document_state) =
@@ -314,7 +314,7 @@ pub async fn handle_key<R: Renderer>(
                 };
 
             app.decrease_all_cue_end_times(
-                config.backwards_cue_increment_small,
+                config.subtitles.backwards_cue_increment_small,
             );
 
             if let Some(document_state) =
@@ -396,7 +396,7 @@ pub async fn handle_key<R: Renderer>(
                     None => Vec::new(),
                 };
 
-            app.increase_all_cue_end_times(config.forwards_cue_increment_small);
+            app.increase_all_cue_end_times(config.subtitles.forwards_cue_increment_small);
 
             if let Some(document_state) =
                 &mut app.state.subtitle_documents.active_mut()
@@ -478,7 +478,7 @@ pub async fn handle_key<R: Renderer>(
                 };
 
             app.decrease_all_cue_start_times(
-                config.backwards_cue_increment_large,
+                config.subtitles.backwards_cue_increment_large,
             );
 
             if let Some(document_state) =
@@ -561,7 +561,7 @@ pub async fn handle_key<R: Renderer>(
                 };
 
             app.increase_all_cue_start_times(
-                config.forwards_cue_increment_large,
+                config.subtitles.forwards_cue_increment_large,
             );
 
             if let Some(document_state) =
@@ -644,7 +644,7 @@ pub async fn handle_key<R: Renderer>(
                 };
 
             app.decrease_all_cue_end_times(
-                config.backwards_cue_increment_large,
+                config.subtitles.backwards_cue_increment_large,
             );
 
             if let Some(document_state) =
@@ -726,7 +726,7 @@ pub async fn handle_key<R: Renderer>(
                     None => Vec::new(),
                 };
 
-            app.increase_all_cue_end_times(config.forwards_cue_increment_large);
+            app.increase_all_cue_end_times(config.subtitles.forwards_cue_increment_large);
 
             if let Some(document_state) =
                 &mut app.state.subtitle_documents.active_mut()

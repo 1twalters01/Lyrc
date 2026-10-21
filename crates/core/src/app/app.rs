@@ -1,5 +1,5 @@
 use aligner::messages::AlignmentRequest;
-use configuration::config::Config;
+use configuration::config::PlaybackConfig;
 use database::service::DatabaseService;
 use downloader::messages::DownloadRequest;
 use mpris::client::MprisClient;
@@ -37,10 +37,10 @@ where
         download_req_tx: Sender<DownloadRequest>,
         translation_req_tx: Sender<TranslationRequest>,
         alignment_req_tx: Sender<AlignmentRequest>,
-        config: &Config,
+        playback_config: &PlaybackConfig,
     ) -> Self {
         let synchronizer = AppSynchronizer::new();
-        let clock = PlaybackClock::new(config.clock_offset);
+        let clock = PlaybackClock::new(playback_config.clock_offset);
         let state = AppState::new();
 
         Self {

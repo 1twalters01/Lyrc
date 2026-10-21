@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use async_channel::Sender;
-use configuration::config::Config;
+use configuration::config::PlaybackConfig;
 use futures_util::stream::StreamExt;
 use mpris::client::MprisClient;
 use tokio::time::interval;
@@ -9,7 +9,7 @@ use tokio::time::interval;
 use crate::{interfaces::gui::message::AppMessage, workers::start::WorkersRx};
 
 pub fn event_source(
-    config: Config,
+    playback_config: PlaybackConfig,
     mpris_client: Arc<Option<MprisClient>>,
     mut workers_rx: WorkersRx,
     tx_mpris: Sender<AppMessage>,
@@ -27,7 +27,7 @@ pub fn event_source(
         };
 
         let mut tick_event =
-            interval(Duration::from_secs_f64(1f64 / config.fps));
+            interval(Duration::from_secs_f64(1f64 / playback_config.fps));
 
         if let Some(ref client) = *mpris_client {
             let track = client.get_current_track().await.ok();

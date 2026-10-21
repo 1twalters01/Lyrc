@@ -10,13 +10,13 @@ use tui::renderer::TuiRenderer;
 
 pub async fn run_tui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mpris_client =
-        match MprisClient::choose_player(&config.targets_in_priority_order)
+        match MprisClient::choose_player(&config.player.targets_in_priority_order)
             .await?
         {
             Some(player) => Some(MprisClient::connect(&player).await?),
             None => None,
         };
-    let database_service = DatabaseService::new(&config).await?;
+    let database_service = DatabaseService::new(&config.database).await?;
     let workers = Workers::start().await?;
 
     run_app(database_service, mpris_client, workers, config).await
@@ -35,7 +35,7 @@ pub async fn run_app(
         workers.tx.download_tx,
         workers.tx.translation_tx,
         workers.tx.alignment_tx,
-        &config,
+        &config.playback,
     );
 
     app.update().await;

@@ -1,4 +1,4 @@
-use configuration::config::Config;
+use configuration::config::DatabaseConfig;
 use sqlx::{
     Pool,
     sqlite::{Sqlite, SqlitePoolOptions},
@@ -28,8 +28,11 @@ impl DatabaseService {
         Ok(Self { pool })
     }
 
-    pub async fn new(config: &Config) -> Result<Self, sqlx::Error> {
-        Self::from_url(&config.database_url, config.max_connections).await
+    pub async fn new(
+        database_config: &DatabaseConfig,
+    ) -> Result<Self, sqlx::Error> {
+        Self::from_url(&database_config.url, database_config.max_connections)
+            .await
     }
 
     pub fn get_pool(&self) -> Pool<Sqlite> {
