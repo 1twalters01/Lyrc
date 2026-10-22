@@ -32,6 +32,7 @@ pub async fn run_gui(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     run_app(database_service, mpris_client, workers, config).await
 }
 
+#[cfg(target_os = "linux")]
 pub async fn run_app(
     database_service: DatabaseService,
     mpris_client: Option<MprisClient>,
